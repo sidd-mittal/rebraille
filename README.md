@@ -4,5 +4,6 @@ flask:
 ```docker compose build```
 ```docker compose up -d```
 
-mobileApp:
+App:
+
 ```npx expo start```
