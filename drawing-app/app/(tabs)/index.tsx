@@ -1,177 +1,133 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, PanResponder, Button } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  Alert,
+} from 'react-native';
+// You'd need to import a Bluetooth library like 'react-native-ble-plx' for real Bluetooth functionality
 
-export default function HomeScreen() {
-  const [paths, setPaths] = useState<string[]>([]);
-  const [currentPath, setCurrentPath] = useState<string>("");
-  const [tool, setTool] = useState<"pencil" | "eraser">("pencil");
-  const [highlightedPaths, setHighlightedPaths] = useState<Set<number>>(new Set());
-  const [points, setPoints] = useState<{ x: number, y: number }[]>([]); // Track points for straight line detection
-  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+const App = () => {
+  // State for the grid (2x3 matrix)
+  const [grid, setGrid] = useState(
+    Array(3).fill(null).map(() => Array(2).fill(false)) // Creates a 3x2 grid (false means white pixel)
+  );
 
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onPanResponderGrant: (evt) => {
-      if (tool === "pencil") {
-        const { locationX, locationY } = evt.nativeEvent;
-        setCurrentPath(`M ${locationX} ${locationY}`);
-        setPoints([{ x: locationX, y: locationY }]); // Reset points
-      } else if (tool === "eraser") {
-        setHighlightedPaths(new Set());
-      }
+  // State for the current tool (pencil or eraser)
+  const [tool, setTool] = useState<'pencil' | 'eraser'>('pencil');
 
-      if (timer) {
-        clearTimeout(timer); // Clear previous timer
-      }
+  // Ref to track touch movements
+  const touchRef = useRef<{ row: number; col: number } | null>(null);
 
-      // Start a new timer to check for holding the straight line
-      setTimer(setTimeout(() => {
-        if (points.length > 2) {
-          straightenLine();
-        }
-      }, 1000)); // 1 second hold to straighten
-    },
-    onPanResponderMove: (evt) => {
-      const { locationX, locationY } = evt.nativeEvent;
-      if (tool === "pencil") {
-        setCurrentPath((prev) => `${prev} L ${locationX} ${locationY}`);
-        setPoints((prevPoints) => [...prevPoints, { x: locationX, y: locationY }]);
-
-        if (points.length > 1) {
-          const lastPoint = points[points.length - 1];
-          const secondLastPoint = points[points.length - 2];
-          const angle = calculateAngle(lastPoint, secondLastPoint, { x: locationX, y: locationY });
-
-          // Check if the line is close to being straight
-          if (Math.abs(angle) < 10 || Math.abs(angle - 180) < 10) {
-            if (!timer) {
-              setTimer(setTimeout(() => straightenLine(), 1000)); // Hold the line for a second
-            }
-          }
-        }
-      } else if (tool === "eraser") {
-        const touchedPaths = findPathsToHighlight(locationX, locationY, paths);
-        touchedPaths.forEach((index) => highlightedPaths.add(index)); // Keep adding to highlighted set
-        setHighlightedPaths(new Set(highlightedPaths)); // Force re-render by creating a new set
-      }
-    },
-    onPanResponderRelease: () => {
-      if (tool === "pencil" && currentPath) {
-        setPaths((prevPaths) => [...prevPaths, currentPath]);
-        setCurrentPath(""); // Reset current path after release
-        setPoints([]); // Clear points after release to avoid issues in next stroke
-      } else if (tool === "eraser") {
-        setPaths((prevPaths) => prevPaths.filter((_, index) => !highlightedPaths.has(index)));
-        setHighlightedPaths(new Set());
-      }
-
-      // Clear the timer when release happens
-      if (timer) {
-        clearTimeout(timer);
-        setTimer(null);
-      }
-    },
-  });
-
-  const calculateAngle = (p1: { x: number, y: number }, p2: { x: number, y: number }, p3: { x: number, y: number }) => {
-    const angle1 = Math.atan2(p1.y - p2.y, p1.x - p2.x);
-    const angle2 = Math.atan2(p3.y - p2.y, p3.x - p2.x);
-    const angle = (angle2 - angle1) * (180 / Math.PI); // Convert to degrees
-    return angle;
+  // Function to toggle pixel state
+  const togglePixel = (row: number, col: number) => {
+    setGrid((prevGrid) => {
+      const newGrid = [...prevGrid];
+      newGrid[row][col] = tool === 'pencil'; // Set the pixel to black if pencil is selected, white if eraser is selected
+      return newGrid;
+    });
   };
 
-  const straightenLine = () => {
-    if (points.length > 1) {
-      const start = points[0];
-      const end = points[points.length - 1];
+  // Function to handle touch move and update the grid while dragging
+  const handleTouchMove = (e: any) => {
+    const { locationX, locationY } = e.nativeEvent;
+    const row = Math.floor(locationY / 100); // Y position determines row (100px for each pixel)
+    const col = Math.floor(locationX / 100); // X position determines column (100px for each pixel)
 
-      // Check if line is approximately horizontal or vertical and snap it accordingly
-      if (Math.abs(start.y - end.y) < 10) {
-        // Horizontal line
-        setCurrentPath(`M ${start.x} ${start.y} L ${end.x} ${start.y}`);
-      } else if (Math.abs(start.x - end.x) < 10) {
-        // Vertical line
-        setCurrentPath(`M ${start.x} ${start.y} L ${start.x} ${end.y}`);
-      } else {
-        // Diagonal line (or any other case, snap to diagonal)
-        setCurrentPath(`M ${start.x} ${start.y} L ${end.x} ${end.y}`);
+    if (row < 3 && col < 2) {
+      // Ensure we are inside grid bounds (3 rows, 2 columns)
+      if (touchRef.current?.row !== row || touchRef.current?.col !== col) {
+        togglePixel(row, col);
+        touchRef.current = { row, col }; // Update the current pixel position to avoid redundant updates
       }
     }
   };
 
-  const findPathsToHighlight = (x: number, y: number, paths: string[]): number[] => {
-    const threshold = 20;
-    let touchedPaths: number[] = [];
-    for (let i = 0; i < paths.length; i++) {
-      const path = paths[i];
-      if (isPathTouched(x, y, path, threshold)) {
-        touchedPaths.push(i);
-      }
-    }
-    return touchedPaths;
+  // Function to handle touch start
+  const handleTouchStart = (e: any) => {
+    handleTouchMove(e); // Start drawing or erasing immediately
   };
 
-  const isPathTouched = (x: number, y: number, path: string, threshold: number): boolean => {
-    const commands = path.split(" ");
-    for (let i = 0; i < commands.length; i += 3) {
-      const px = parseFloat(commands[i + 1]);
-      const py = parseFloat(commands[i + 2]);
-      if (Math.hypot(px - x, py - y) < threshold) {
-        return true;
-      }
-    }
-    return false;
+  // Function to send the grid data as a 1D array via Bluetooth
+  const sendGridData = () => {
+    // Convert the grid to a 1D array of 1s (black) and 0s (white)
+    const flattenedGrid = grid.flat().map((pixel) => (pixel ? 1 : 0));
+
+    // Log the data to the console
+    console.log('Grid Data to Send:', flattenedGrid);
+
+    // Placeholder for Bluetooth functionality
+    Alert.alert('Send', 'Grid data has been sent via Bluetooth!');
+    // Here you'd add your Bluetooth send logic using a library like react-native-ble-plx
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.drawingArea} {...panResponder.panHandlers}>
-        <Svg style={styles.svg}>
-          {paths.map((path, index) => (
-            <Path
-              key={index}
-              d={path}
-              stroke={highlightedPaths.has(index) ? "red" : "black"}
-              strokeWidth={3}
-              fill="none"
+    <SafeAreaView style={styles.container}>
+      <View
+        style={styles.gridContainer}
+        onStartShouldSetResponder={() => true}
+        onResponderMove={handleTouchMove} // Handle the touch move event for dragging
+        onResponderStart={handleTouchStart} // Handle touch start
+      >
+        {grid.map((row, rowIndex) =>
+          row.map((pixel, colIndex) => (
+            <TouchableOpacity
+              key={`${rowIndex}-${colIndex}`}
+              style={[styles.pixel, { backgroundColor: pixel ? 'black' : 'white' }]}
+              onPress={() => togglePixel(rowIndex, colIndex)} // Single click to toggle
             />
-          ))}
-          {currentPath && <Path d={currentPath} stroke="black" strokeWidth={3} fill="none" />}
-        </Svg>
+          ))
+        )}
       </View>
-      <View style={styles.toolBar}>
-        <Button
-          title="Pencil"
-          color={tool === "pencil" ? "blue" : "black"}
-          onPress={() => setTool("pencil")}
-        />
-        <Button
-          title="Eraser"
-          color={tool === "eraser" ? "blue" : "black"}
-          onPress={() => setTool("eraser")}
-        />
+
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity style={styles.button} onPress={() => setTool('pencil')}>
+          <Text style={styles.buttonText}>Pencil</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={() => setTool('eraser')}>
+          <Text style={styles.buttonText}>Eraser</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={sendGridData}>
+          <Text style={styles.buttonText}>Send</Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: "row",
-    backgroundColor: "#fff",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  drawingArea: {
-    flex: 1,
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: 200, // 2 columns, each 100px wide
+    height: 300, // 3 rows, each 100px tall
   },
-  svg: {
-    flex: 1,
+  pixel: {
+    width: 100, // Increased pixel size to 100px
+    height: 100, // Increased pixel size to 100px
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
-  toolBar: {
-    width: 80,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f0f0f0",
+  buttonsContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+  },
+  button: {
+    padding: 10,
+    margin: 5,
+    backgroundColor: '#ddd',
+    borderRadius: 5,
+  },
+  buttonText: {
+    fontSize: 16,
   },
 });
+
+export default App;

@@ -5,5 +5,5 @@ flask:
 ```docker compose up -d```
 
 App:
-
+``` cd mobile-app ```
 ```npx expo start```
