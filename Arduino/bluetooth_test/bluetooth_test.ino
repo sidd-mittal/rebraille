@@ -27,10 +27,31 @@ class MyServerCallbacks: public BLEServerCallbacks {
   }
 };
 
+struct Dot {
+  int in1;
+  int in2;
+};
+
+int DOT_ARRAY_SIZE = 1;
+const int PWM_PIN = 15;
+
+Dot dots[1] = {
+  {13, 12} // Dot 1
+};
+
 void setup() {
+  // Initialize dot pins
+  for (int i = 0; i < DOT_ARRAY_SIZE; i++) {
+    pinMode(dots[i].in1, OUTPUT);
+    pinMode(dots[i].in2, OUTPUT);
+  }
+
+  pinMode(PWM_PIN, OUTPUT);
+  analogWrite(PWM_PIN, 150); // hard code the speed of the dot
+
   // Start serial communication
   Serial.begin(115200);
- pinMode(25, OUTPUT); // Set GPIO 25 as output
+  pinMode(25, OUTPUT); // Set GPIO 25 as output
 
   // Initialize BLE
   BLEDevice::init("ESP32 Bluetooth Receiver");
@@ -64,29 +85,40 @@ void setup() {
   Serial.println("Waiting for a client to connect...");
 }
 
+void moveCounterClockwise(int index) {
+  digitalWrite(dots[index].in1, HIGH);
+  digitalWrite(dots[index].in2, LOW);
+}
+
+void moveClockwise(int index) {
+  digitalWrite(dots[index].in1, LOW);
+  digitalWrite(dots[index].in2, HIGH);
+}
+
 void loop() {
   // Check if data has been written to the characteristic
   if (pCharacteristic->getValue().length() > 0) {
     // Get the received data (using String)
     String value = pCharacteristic->getValue();
     
-    // Print each byte to the Serial Monitor
-    Serial.print("Received data: ");
-    Serial.print(value);
     for (size_t i = 0; i < value.length(); i++) {
-      // Serial.print("0x");
-      Serial.print(value[i], int);
-      Serial.print(" ");
+      if (value[i] == 1) {
+        Serial.println("Moved Motor CCW: " + i);
+        moveCounterClockwise(i);
+      }
+      else if (value[i] == 0) {
+        Serial.println("Moved Motor CW: " + i);
+        moveClockwise(i);
+      }
     }
-    Serial.println();
 
-    if(value[0] == 1){
-      Serial.print("Top Right = 1");
-      digitalWrite(25, HIGH);  
-    }
-    else {
-      digitalWrite(25, LOW);  
-    }
+    // if(value[0] == 1){
+    //   Serial.print("Top Right = 1");
+    //   digitalWrite(25, HIGH);  
+    // }
+    // else {
+    //   digitalWrite(25, LOW);  
+    // }
     
     // Clear the value to wait for the next write
     pCharacteristic->setValue("");
