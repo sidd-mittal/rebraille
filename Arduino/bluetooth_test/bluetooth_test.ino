@@ -10,6 +10,7 @@
 // Create BLE server and characteristic
 BLEServer *pServer = nullptr;
 BLECharacteristic *pCharacteristic = nullptr;
+BLEAdvertising *pAdvertising = nullptr;
 
 // BLE callback for handling connections
 class MyServerCallbacks: public BLEServerCallbacks {
@@ -19,6 +20,10 @@ class MyServerCallbacks: public BLEServerCallbacks {
 
   void onDisconnect(BLEServer* pServer) {
     Serial.println("Device disconnected");
+
+    // Restart advertising to wait for a new client connection
+    pAdvertising->start();
+    Serial.println("Waiting for a client to connect...");
   }
 };
 
@@ -28,7 +33,7 @@ void setup() {
 
   // Initialize BLE
   BLEDevice::init("ESP32 Bluetooth Receiver");
-  
+
   // Create the BLE server
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
@@ -49,8 +54,10 @@ void setup() {
   // Start the service
   pService->start();
 
+  // Get the advertising object
+  pAdvertising = pServer->getAdvertising();
+
   // Start advertising
-  BLEAdvertising *pAdvertising = pServer->getAdvertising();
   pAdvertising->start();
 
   Serial.println("Waiting for a client to connect...");
