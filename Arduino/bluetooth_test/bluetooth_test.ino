@@ -30,6 +30,7 @@ class MyServerCallbacks: public BLEServerCallbacks {
 void setup() {
   // Start serial communication
   Serial.begin(115200);
+ pinMode(25, OUTPUT); // Set GPIO 25 as output
 
   // Initialize BLE
   BLEDevice::init("ESP32 Bluetooth Receiver");
@@ -71,12 +72,21 @@ void loop() {
     
     // Print each byte to the Serial Monitor
     Serial.print("Received data: ");
+    Serial.print(value);
     for (size_t i = 0; i < value.length(); i++) {
-      Serial.print("0x");
-      Serial.print(value[i], HEX);
+      // Serial.print("0x");
+      Serial.print(value[i], int);
       Serial.print(" ");
     }
     Serial.println();
+
+    if(value[0] == 1){
+      Serial.print("Top Right = 1");
+      digitalWrite(25, HIGH);  
+    }
+    else {
+      digitalWrite(25, LOW);  
+    }
     
     // Clear the value to wait for the next write
     pCharacteristic->setValue("");
