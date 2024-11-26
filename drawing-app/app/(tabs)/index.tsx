@@ -7,76 +7,101 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-// You'd need to import a Bluetooth library like 'react-native-ble-plx' for real Bluetooth functionality
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const App = () => {
-  // State for the grid (2x3 matrix)
   const [grid, setGrid] = useState(
-    Array(3).fill(null).map(() => Array(2).fill(false)) // Creates a 3x2 grid (false means white pixel)
+    Array(3)
+      .fill(null)
+      .map(() => Array(2).fill(false)) // Creates a 3x2 grid (false means white pixel)
   );
 
-  // State for the current tool (pencil or eraser)
   const [tool, setTool] = useState<'pencil' | 'eraser'>('pencil');
-
-  // Ref to track touch movements
   const touchRef = useRef<{ row: number; col: number } | null>(null);
 
-  // Function to toggle pixel state
-  const togglePixel = (row: number, col: number) => {
+  // Function to update pixel state
+  const updatePixel = (row: number, col: number) => {
     setGrid((prevGrid) => {
-      const newGrid = [...prevGrid];
-      newGrid[row][col] = tool === 'pencil'; // Set the pixel to black if pencil is selected, white if eraser is selected
+      const newGrid = prevGrid.map((rowArray, rowIndex) =>
+        rowArray.map((pixel, colIndex) =>
+          rowIndex === row && colIndex === col
+            ? tool === 'pencil' // Set to black if pencil, white if eraser
+            : pixel
+        )
+      );
       return newGrid;
     });
   };
 
-  // Function to handle touch move and update the grid while dragging
+  // Helper to calculate interpolated pixels (for skipped touches)
+  const interpolatePixels = (prev, current) => {
+    const interpolated = [];
+    const rowDiff = current.row - prev.row;
+    const colDiff = current.col - prev.col;
+    const steps = Math.max(Math.abs(rowDiff), Math.abs(colDiff));
+    for (let i = 1; i <= steps; i++) {
+      interpolated.push({
+        row: prev.row + Math.round((rowDiff * i) / steps),
+        col: prev.col + Math.round((colDiff * i) / steps),
+      });
+    }
+    return interpolated;
+  };
+
+  // Function to handle touch move
   const handleTouchMove = (e: any) => {
     const { locationX, locationY } = e.nativeEvent;
     const row = Math.floor(locationY / 100); // Y position determines row (100px for each pixel)
     const col = Math.floor(locationX / 100); // X position determines column (100px for each pixel)
 
-    if (row < 3 && col < 2) {
-      // Ensure we are inside grid bounds (3 rows, 2 columns)
-      if (touchRef.current?.row !== row || touchRef.current?.col !== col) {
-        togglePixel(row, col);
-        touchRef.current = { row, col }; // Update the current pixel position to avoid redundant updates
+    if (row < 3 && col < 2 && row >= 0 && col >= 0) {
+      // Ensure we are inside grid bounds
+      const current = { row, col };
+      if (!touchRef.current) {
+        updatePixel(row, col); // Update the first touched pixel
+      } else {
+        // Fill in skipped pixels
+        const interpolatedPixels = interpolatePixels(touchRef.current, current);
+        interpolatedPixels.forEach(({ row, col }) => updatePixel(row, col));
       }
+      touchRef.current = current; // Update current pixel position
     }
   };
 
   // Function to handle touch start
   const handleTouchStart = (e: any) => {
-    handleTouchMove(e); // Start drawing or erasing immediately
+    touchRef.current = null; // Reset the touch reference
+    handleTouchMove(e); // Start drawing immediately
   };
 
-  // Function to send the grid data as a 1D array via Bluetooth
+  // Function to handle touch end
+  const handleTouchEnd = () => {
+    touchRef.current = null; // Reset after the touch gesture ends
+  };
+
   const sendGridData = () => {
-    // Convert the grid to a 1D array of 1s (black) and 0s (white)
     const flattenedGrid = grid.flat().map((pixel) => (pixel ? 1 : 0));
-
-    // Log the data to the console
     console.log('Grid Data to Send:', flattenedGrid);
-
-    // Placeholder for Bluetooth functionality
     Alert.alert('Send', 'Grid data has been sent via Bluetooth!');
-    // Here you'd add your Bluetooth send logic using a library like react-native-ble-plx
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View
         style={styles.gridContainer}
-        onStartShouldSetResponder={() => true}
-        onResponderMove={handleTouchMove} // Handle the touch move event for dragging
+        onStartShouldSetResponder={() => true} // Always allow touch gestures
+        onResponderMove={handleTouchMove} // Handle touch move for stroke drawing
         onResponderStart={handleTouchStart} // Handle touch start
+        onResponderRelease={handleTouchEnd} // Handle touch release
       >
         {grid.map((row, rowIndex) =>
           row.map((pixel, colIndex) => (
-            <TouchableOpacity
+            <View
               key={`${rowIndex}-${colIndex}`}
-              style={[styles.pixel, { backgroundColor: pixel ? 'black' : 'white' }]}
-              onPress={() => togglePixel(rowIndex, colIndex)} // Single click to toggle
+              style={[
+                styles.pixel,
+                { backgroundColor: pixel ? 'black' : 'white' },
+              ]}
             />
           ))
         )}
@@ -92,7 +117,15 @@ const App = () => {
         <TouchableOpacity style={styles.button} onPress={sendGridData}>
           <Text style={styles.buttonText}>Send</Text>
         </TouchableOpacity>
+        
       </View>
+      <Icon
+        name="bluetooth"
+        size={30}
+        color="black"
+        onPress={() => Alert.alert('Bluetooth', 'Connect to Bluetooth here')}
+        style={styles.bluetoothButton}
+      />
     </SafeAreaView>
   );
 };
@@ -110,8 +143,8 @@ const styles = StyleSheet.create({
     height: 300, // 3 rows, each 100px tall
   },
   pixel: {
-    width: 100, // Increased pixel size to 100px
-    height: 100, // Increased pixel size to 100px
+    width: 100,
+    height: 100,
     borderWidth: 1,
     borderColor: '#ccc',
   },
@@ -127,6 +160,13 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 16,
+  },
+  bluetoothButton: {
+    marginTop: 20,
+
+    borderRadius: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
