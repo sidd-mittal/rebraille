@@ -6,7 +6,10 @@ import {
   StyleSheet,
   SafeAreaView,
   Alert,
+  Platform
 } from 'react-native';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 const App = () => {
@@ -15,9 +18,33 @@ const App = () => {
       .fill(null)
       .map(() => Array(2).fill(false)) // Creates a 3x2 grid (false means white pixel)
   );
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [bluetoothDevice, setBluetoothDevice] = useState<BluetoothDevice | null>(null);
+  const [bluetoothError, setBluetoothError] = useState<string | null>(null);
+  const [sendStatus, setSendStatus] = useState<string | null>(null);
 
   const [tool, setTool] = useState<'pencil' | 'eraser'>('pencil');
   const touchRef = useRef<{ row: number; col: number } | null>(null);
+  const testBluetooth = async (): Promise<void> => {
+    if (Platform.OS !== 'web') {
+      setBluetoothError('Bluetooth API is only supported on web browsers.');
+      return;
+    }
+
+    try {
+      setBluetoothError(null);
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: ['battery_service'], // Adjust as needed for your device
+      });
+
+      setBluetoothDevice(device);
+      console.log(`Connected to device: ${device.name}`);
+    } catch (error: any) {
+      setBluetoothError(error.message);
+    }
+  };
 
   // Function to update pixel state
   const updatePixel = (row: number, col: number) => {
@@ -79,9 +106,31 @@ const App = () => {
     touchRef.current = null; // Reset after the touch gesture ends
   };
 
-  const sendGridData = () => {
-    const flattenedGrid = grid.flat().map((pixel) => (pixel ? 1 : 0));
-    console.log('Grid Data to Send:', flattenedGrid);
+  const sendGridData = async (): Promise<void> => {
+    setSendStatus(null);
+
+    if (!bluetoothDevice) {
+      setSendStatus('No device paired.');
+      return;
+    }
+
+    try {
+      const server = await bluetoothDevice.gatt?.connect();
+      const service = await server?.getPrimaryService('battery_service'); // Adjust service UUID as needed
+      const characteristic = await service?.getCharacteristic('battery_level'); // Adjust characteristic UUID as needed
+
+      // Send the array [0, 1]
+      // const data = new Uint8Array([[],[],[]]);
+      const flattenedGrid = grid.flat().map((pixel) => (pixel ? 1 : 0));
+      console.log('Grid Data to Send:', flattenedGrid);
+      const flatData = new Uint8Array(
+        flattenedGrid
+      );
+      await characteristic?.writeValue(flatData);
+      setSendStatus('Data sent successfully.');
+    } catch (error: any) {
+      setSendStatus(`Error sending data: ${error.message}`);
+    }
     Alert.alert('Send', 'Grid data has been sent via Bluetooth!');
   };
 
@@ -116,6 +165,7 @@ const App = () => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={sendGridData}>
           <Text style={styles.buttonText}>Send</Text>
+          {sendStatus && <ThemedText>{sendStatus}</ThemedText>}
         </TouchableOpacity>
         
       </View>
@@ -123,9 +173,15 @@ const App = () => {
         name="bluetooth"
         size={30}
         color="black"
-        onPress={() => Alert.alert('Bluetooth', 'Connect to Bluetooth here')}
+        onPress={testBluetooth}
         style={styles.bluetoothButton}
       />
+                  {bluetoothDevice && (
+            <ThemedText>Connected to: {bluetoothDevice.name || 'Unknown Device'}</ThemedText>
+          )}
+          {bluetoothError && (
+            <ThemedText style={styles.errorText}>Error: {bluetoothError}</ThemedText>
+          )}
     </SafeAreaView>
   );
 };
