@@ -8,8 +8,6 @@ import {
   Alert,
   Platform
 } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 const App = () => {
@@ -165,7 +163,7 @@ const App = () => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.button} onPress={sendGridData}>
           <Text style={styles.buttonText}>Send</Text>
-          {sendStatus && <ThemedText>{sendStatus}</ThemedText>}
+          {sendStatus && {sendStatus}}
         </TouchableOpacity>
         
       </View>
@@ -177,10 +175,10 @@ const App = () => {
         style={styles.bluetoothButton}
       />
                   {bluetoothDevice && (
-            <ThemedText>Connected to: {bluetoothDevice.name || 'Unknown Device'}</ThemedText>
+            <a>Connected to: {bluetoothDevice.name || 'Unknown Device'}</a>
           )}
           {bluetoothError && (
-            <ThemedText style={styles.errorText}>Error: {bluetoothError}</ThemedText>
+            <a style={styles.errorText}>Error: {bluetoothError}</a>
           )}
     </SafeAreaView>
   );
@@ -227,3 +225,4 @@ const styles = StyleSheet.create({
 });
 
 export default App;
+
