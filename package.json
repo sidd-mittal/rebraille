@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@react-navigation/stack": "^7.1.1"
+  }
+}
