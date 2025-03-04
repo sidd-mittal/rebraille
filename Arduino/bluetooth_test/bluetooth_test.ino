@@ -111,15 +111,6 @@ void loop() {
         moveClockwise(i);
       }
     }
-
-    // if(value[0] == 1){
-    //   Serial.print("Top Right = 1");
-    //   digitalWrite(25, HIGH);  
-    // }
-    // else {
-    //   digitalWrite(25, LOW);  
-    // }
-    
     // Clear the value to wait for the next write
     pCharacteristic->setValue("");
   }
