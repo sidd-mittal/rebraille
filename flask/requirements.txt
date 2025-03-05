@@ -1,3 +1,4 @@
 Flask==3.0.3
 flask-sqlalchemy==3.1.0
 psycopg2-binary==2.9.6
+pyserial==3.5

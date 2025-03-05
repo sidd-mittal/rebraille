@@ -1,6 +1,6 @@
-import { View, TextInput, Text, StyleSheet, Button, Alert } from 'react-native';
+import { View, TextInput, Text, StyleSheet, Button } from 'react-native';
 import React, { useState } from 'react';
-import { Link, useRouter } from "expo-router";
+import { Link } from "expo-router";
 
 const styles = StyleSheet.create({
   container: {
@@ -30,41 +30,29 @@ const styles = StyleSheet.create({
 export default function Login() {
   const [text, setText] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState(""); // Store error message
-
-
-  const checkLogin = () => {
-    if (text == '123' && password == '123'){
-      return true;
-    }
-    return false; // Change to actual validation (e.g., checking user input)
-  };
+  const [email, setEmail] = useState('');
 
   const handleLogin = () => {
-
-    const isAuthenticated = checkLogin(); // Replace with actual auth logic
-
-    if (isAuthenticated) {
-      router.push("/home"); // Navigate if true
-      setErrorMessage("")
-    } else {
-      Alert.alert("Login Failed", "Invalid credentials. Please try again.");
-      setErrorMessage("Incorrect")
-    }
+    // Replace with actual login logic
+    console.log('Username:', text);
+    console.log('Password:', password);
   };
-  const router = useRouter();
 
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Enter text:</Text>
-
-      {errorMessage ? <Text style={{ color: "red", marginBottom: 10 }}>{errorMessage}</Text> : null}
       <TextInput
         style={styles.input}
         placeholder="Username..."
         value = {text}
         onChangeText={setText}
+      />
+        <TextInput
+        style={styles.input}
+        placeholder="Email..."
+        value = {email}
+        onChangeText={setEmail}
       />
       <TextInput
         style={styles.input}
@@ -72,8 +60,8 @@ export default function Login() {
         value = {password}
         onChangeText={setPassword}
       />
-      <Button title="Login" onPress={handleLogin}  />
-      <Text>Dont have an account? <Link href="/signup" style={{ color: "blue" }}>Sign Up</Link></Text>
+      <Button title="Sign Up" onPress={handleLogin} />
+            <Text>Already have an account? <Link href="/login" style={{ color: "blue" }}>Log In</Link></Text>
     </View>
   );
 }
