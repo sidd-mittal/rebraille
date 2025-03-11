@@ -1,6 +1,11 @@
-import { View, TextInput, Text, StyleSheet, Button } from 'react-native';
-import React, { useState } from 'react';
-import { Link } from "expo-router";
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Button, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { Link, useRouter } from "expo-router"; // Ensure 'useRouter' is imported correctly
+import Logo from '../assets/images/rebraille_logo.svg';
+import { useFonts, Poppins_300Light, Poppins_400Regular } from '@expo-google-fonts/poppins';
+import * as SplashScreen from 'expo-splash-screen';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+
 
 const styles = StyleSheet.create({
   container: {
@@ -8,13 +13,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: 'white',
   },
   label: {
     fontSize: 18,
     marginBottom: 5,
+    alignSelf: 'flex-start', // Left-align the label within the container
   },
   input: {
-    width: '50%',
+    width: '100%', // Make the input span the entire width of the container
     height: 40,
     borderColor: 'gray',
     borderWidth: 1,
@@ -26,42 +33,144 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 10,
   },
+  logoTitle: {
+    fontSize: 25,
+    marginTop: 10,
+    fontFamily: 'Poppins_300Light', 
+    fontStyle: 'normal',
+    fontWeight: '300', 
+    lineHeight: 38,
+    color: '#31572C',
+  },
+
+  logoContainer: {
+    marginBottom: 75,
+  },
+
+  loginInput: {
+    width: '100%', // Ensure the container takes full width
+    marginBottom: 20, // Space between fields
+  },
+
+  inputTitle: {
+    fontFamily: 'Poppins_400Regular', 
+    fontStyle: 'normal',
+    fontWeight: '600',
+    alignSelf: 'flex-start', // Left-align the label
+    marginBottom: 5, // Space between label and input field
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 10,
+    top: 35,
+  },
+  inputFields:{
+    width:'30%'
+  },
+  button:{
+    backgroundColor: "#31572C",
+    paddingVertical: 5,
+    paddingHorizontal: 5,
+    borderRadius: 15,
+    alignItems: "center",
+    width: "100%",
+  },
+
+  buttonText:{
+    color:'white'
+  }
 });
+
 export default function Login() {
+  const [fontsLoaded] = useFonts({
+    Poppins_300Light,
+    Poppins_400Regular,
+  });
+
   const [text, setText] = useState('');
   const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('');
+  const [errorMessage, setErrorMessage] = useState(""); 
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
-  const handleLogin = () => {
-    // Replace with actual login logic
-    console.log('Username:', text);
-    console.log('Password:', password);
+  const router = useRouter(); 
+
+  const checkLogin = () => {
+    if (text === '123' && password === '123') {
+      return true;
+    }
+    return false; // Change to actual validation (e.g., checking user input)
   };
 
+  const handleLogin = () => {
+    const isAuthenticated = checkLogin(); // Replace with actual auth logic
+
+    if (isAuthenticated) {
+      router.push("/home"); // Navigate if true
+      setErrorMessage(""); // Clear any previous error messages
+    } else {
+      Alert.alert("Login Failed", "Invalid credentials. Please try again.");
+      setErrorMessage("Incorrect credentials"); // Error message when login fails
+    }
+  };
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) {
+    return null; // Prevent UI from rendering until fonts are loaded
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>Enter text:</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Username..."
-        value = {text}
-        onChangeText={setText}
-      />
+    <View style={styles.container} onLayout={onLayoutRootView}>
+
+    <View style={styles.logoContainer}>
+      <Logo width={100} height={100} />
+      <Text style={styles.logoTitle}>Rebraille</Text>
+    </View>
+      
+   
+    <View style = {styles.inputFields}>
+      <Text style={styles.label}>Sign Up</Text>
+     
+      <View style = {styles.loginInput}>
+        <Text style={styles.inputTitle}>Username</Text>
         <TextInput
-        style={styles.input}
-        placeholder="Email..."
-        value = {email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value = {password}
-        onChangeText={setPassword}
-      />
-      <Button title="Sign Up" onPress={handleLogin} />
-            <Text>Already have an account? <Link href="/login" style={{ color: "blue" }}>Log In</Link></Text>
+          style={styles.input}
+          placeholder="Enter Username/Email"
+          value={text}
+          onChangeText={setText}
+        />
+      </View>
+
+      <View style = {styles.loginInput}>
+        <Text style={styles.inputTitle}>Password</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!passwordVisible}
+        /> 
+        <TouchableOpacity
+        style={styles.eyeIcon}
+        onPress={() => setPasswordVisible(!passwordVisible)} // Toggle the visibility
+      >
+        <Icon name={passwordVisible ? 'visibility' : 'visibility-off'} size={24} color="gray" />
+      </TouchableOpacity>
+      </View>
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+
+      {errorMessage ? <Text style={{ color: "red", marginBottom: 10 }}>{errorMessage}</Text> : null}
+
+      <View>
+        <Text>Already have an account? <Link href="/login" style={{ color: "blue" }}>Log In</Link></Text>
+      </View>
+      </View>      
     </View>
   );
 }
