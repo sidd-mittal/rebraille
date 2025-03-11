@@ -1,6 +1,7 @@
 import { View, TextInput, Text, StyleSheet, Button, Alert } from 'react-native';
 import React, { useState } from 'react';
 import { Link, useRouter } from "expo-router";
+import Logo from '../assets/images/rebraille_logo.svg'
 
 const styles = StyleSheet.create({
   container: {
@@ -57,7 +58,9 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Enter text:</Text>
+      <Logo width={100} height={100} />
+      <Text>Rebraille</Text>
+      <Text style={styles.label}>Log In</Text>
 
       {errorMessage ? <Text style={{ color: "red", marginBottom: 10 }}>{errorMessage}</Text> : null}
       <TextInput
