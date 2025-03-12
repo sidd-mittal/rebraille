@@ -114,7 +114,7 @@ export default function Login() {
     const isAuthenticated = checkLogin(); // Replace with actual auth logic
 
     if (isAuthenticated) {
-      router.push("/home"); // Navigate if true
+      router.push("/tabs"); // Navigate if true
       setErrorMessage(""); // Clear any previous error messages
     } else {
       Alert.alert("Login Failed", "Invalid credentials. Please try again.");
