@@ -5,6 +5,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { View, Text } from "react-native";
 import saved from './template_tabs/saved'
 import Premade from './template_tabs/premade'
+import Shapes from './template_tabs/shapes'
 import { SafeAreaView } from 'react-native';
   {/* Your tab navigator here */}
 
@@ -21,7 +22,8 @@ export default function MyTopTabs() {
             },
           }}>
       <TopTab.Screen name="Saved Drawings" component={saved} />
-      <TopTab.Screen name="Preset Drawings" component={Premade} />
+      <TopTab.Screen name="Shapes" component={Shapes} />
+      <TopTab.Screen name="Letters" component={Premade} />
     </TopTab.Navigator>
     </SafeAreaView>
 

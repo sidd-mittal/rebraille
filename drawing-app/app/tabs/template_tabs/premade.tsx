@@ -73,6 +73,7 @@ const TemplatesScreen = ({ navigation }) => {
         keyExtractor={(item) => item.id.toString()}
         numColumns={4}  // Ensures 4 items per row
         contentContainerStyle={styles.grid}
+        showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
