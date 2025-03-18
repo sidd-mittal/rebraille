@@ -3,7 +3,10 @@ from flask import Flask, jsonify, request
 import os
 import serial
 import time
+from flask_cors import CORS
+
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # DB_HOST = os.getenv("DB_HOST")
 # DB_NAME = os.getenv("DB_NAME")
@@ -38,36 +41,19 @@ app = Flask(__name__)
 
 #     except Exception as e:
 #         return jsonify({'error': str(e)}), 500
-
-ser = serial.Serial('/dev/tty.usbserial-120', 9600, timeout=1)
-
-
 # List all available serial ports
 
 # Print available ports
 
 @app.route('/')
-def test():
+def lol():
     return 'lool'
 
+@app.route('/test', methods=['GET'])
+def test():
+    return jsonify({"message": "Hello from Flask!"})
 
 
-@app.route('/send', methods=['GET'])
-def send_data():
-    data = '0'
-    if data:
-        ser.write(data.encode())  # Send data to the ESP32
-            # Wait for Arduino to process and respond
-    time.sleep(1)  # Wait for the Arduino to respond
 
-    # Read the response from Arduino
-    if ser.in_waiting > 0:
-        response = ser.readline().decode('utf-8').strip()
-        print('ARDUINO RECIEVED:' + response)
-        return jsonify({"status": "success", "message": response})
-    else:
-        print('ARDUINO RECIEVED NO DATA')
-        return jsonify({"status": "error", "message": "No data provided"}), 400
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=9000, debug=True)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=9000)

@@ -7,7 +7,8 @@ import {
   SafeAreaView,
   Alert,
   Platform,
-  Animated
+  Animated,
+  Button
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as Font from 'expo-font';
@@ -84,6 +85,16 @@ const App = ({ navigation, route }) => {
     setGrid(newGrid);
   };
 
+
+  const fetchMessage = async () => {
+    try {
+      const response = await fetch('http://192.168.4.2:9000/test');  // Replace <mac-ip> with your Mac's IP address
+      const data = await response.json();
+      alert(data.message);  // Show the message from Flask
+    } catch (error) {
+      alert('Error connecting to Flask server');
+    }
+  };
   const saveDrawing = () => {
     setMessage('Successfully Saved Drawing');
     setMessageVisible(true);
@@ -123,7 +134,10 @@ const App = ({ navigation, route }) => {
   </Animated.View>
 )}
       <Text style={styles.title}>ReBraille</Text>
-      
+      <View >
+              <Text>React Native + Flask Test</Text>
+              <Button title="Fetch Message from Flask" onPress={fetchMessage} />
+            </View>
       {/* Pixel Grid */}
       <View style={styles.wrapper}>
 
