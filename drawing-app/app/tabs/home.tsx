@@ -42,7 +42,7 @@ const App = ({ navigation, route }) => {
 
   const sendDataToESP32 = async () => {
     try {
-      const esp32IP = "http://192.168.2.153"; // Replace with your ESP32's IP
+      const esp32IP =  "http://10.36.167.169" //"http://192.168.2.153"; // Replace with your ESP32's IP
       const response = await fetch(`${esp32IP}/data`, {
         method: "POST",
         headers: {
@@ -53,8 +53,29 @@ const App = ({ navigation, route }) => {
 
       const responseText = await response.text();
       console.log("Response from ESP32:", responseText);
+      setMessage("Response from ESP32" + responseText);
+      setMessageVisible(true);
+    
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 500, // Duration for fade-in
+        useNativeDriver: true,
+      }).start();
+    
+      setTimeout(() => {
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 500, // Duration for fade-out
+          useNativeDriver: true,
+        }).start();
+    
+        setTimeout(() => {
+          setMessageVisible(false);
+        }, 500); 
+      }, 3000); 
     } catch (error) {
       console.error("Error sending data:", error);
+      setMessage("Error sending data" + error);
     }
   };
 
