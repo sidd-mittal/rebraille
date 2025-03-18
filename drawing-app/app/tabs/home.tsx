@@ -42,7 +42,7 @@ const App = ({ navigation, route }) => {
 
   const sendDataToESP32 = async () => {
     try {
-      const esp32IP =  "http://10.36.167.169" //"http://192.168.2.153"; // Replace with your ESP32's IP
+      const esp32IP =  "http://192.168.4.1" //"http://192.168.2.153"; // Replace with your ESP32's IP
       const response = await fetch(`${esp32IP}/data`, {
         method: "POST",
         headers: {
