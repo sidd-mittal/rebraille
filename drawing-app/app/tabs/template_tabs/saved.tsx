@@ -2,9 +2,12 @@ import React, {useState, useEffect} from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, Button } from 'react-native';
 import {FLASK_URL} from '../../config'
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from 'react-native-vector-icons';
+
 
 const TemplatesScreen = ({ navigation, route }) => {
   const [pixelArrays, setPixelArrays] = useState([]);
+  const [connectionMessage, setConnectionMessage] = useState("")
     // Function to fetch pixelArrays from your API
 
   const fetchPixelArrays = async () => {
@@ -14,11 +17,14 @@ const TemplatesScreen = ({ navigation, route }) => {
       // console.log(data)
       setPixelArrays(data);  // Set the response data to the pixelArrays state
     } catch (error) {
-      alert('Error fetching data from API');
+      
+      setConnectionMessage("Please check your connection")
     }
   };
   useEffect(() => {
+    console.log('saved')
     fetchPixelArrays();  // Fetch pixelArrays when the component mounts
+
   }, []);
 
   useFocusEffect(
@@ -88,6 +94,12 @@ const TemplatesScreen = ({ navigation, route }) => {
         numColumns={4}  // Ensures 4 items per row
         contentContainerStyle={styles.grid}
       />
+       {connectionMessage ? (
+  <View style={styles.connectionMessageContainer}>
+    <Ionicons name="warning-outline" size={100}  />
+    <Text style={styles.connectionMessageText}>{connectionMessage}</Text>
+  </View>
+) : null}
     </SafeAreaView>
   );
 };
@@ -126,6 +138,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  connectionMessageContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Slightly transparent background
+  },
+  connectionMessageText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'black',
+    marginTop: 10,
   },
 });
 

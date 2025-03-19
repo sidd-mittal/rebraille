@@ -1,31 +1,37 @@
-import React from "react";
-import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { createStackNavigator } from "@react-navigation/stack";
-import { NavigationContainer } from "@react-navigation/native";
+// import React from "react";
 import { View, Text } from "react-native";
 import saved from './template_tabs/saved'
 import Premade from './template_tabs/premade'
 import Shapes from './template_tabs/shapes'
-import { SafeAreaView } from 'react-native';
-  {/* Your tab navigator here */}
 
-const TopTab = createMaterialTopTabNavigator();
-export default function MyTopTabs() {
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+
+const Tab = createBottomTabNavigator();
+
+export default function App() {
   return (
-<SafeAreaView style={{ flex: 1 }}>
-    <TopTab.Navigator
-           screenOptions={{
-            tabBarScrollEnabled: false,  // Disable horizontal scrolling
-            tabBarStyle: {
-              width: '100%',  // Ensure the tab bar uses full width
-              paddingHorizontal: 0,  // Prevent unnecessary padding
-            },
-          }}>
-      <TopTab.Screen name="Saved Drawings" component={saved} />
-      <TopTab.Screen name="Shapes" component={Shapes} />
-      <TopTab.Screen name="Letters" component={Premade} />
-    </TopTab.Navigator>
-    </SafeAreaView>
+    <Tab.Navigator
+    screenOptions={{
+      tabBarPosition: 'top', // Move tab bar to the top`
+      tabBarStyle: {
+        borderTopWidth: 0, // Optionally remove the border
+        height: 100, // Adjust height of the tab bar
+        paddingBottom: 5, // Adjust bottom padding
+      },
+     tabBarLabelStyle: {
+      fontSize: 16, // Adjust the size as needed
+      fontWeight: 'bold', // Optional for better visibility
+      
+    },
+    headerShown: false,
+    tabBarIcon: () => null, // Disable the triangle icon
+    }}
+  >
+        <Tab.Screen name="Saved Drawings" component={saved} />
 
+        <Tab.Screen name="Letters" component={Premade} />
+        <Tab.Screen name="Shapes" component={Shapes} />
+      </Tab.Navigator>
   );
 }
