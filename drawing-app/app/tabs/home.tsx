@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -30,19 +30,7 @@ const App = ({ navigation, route }) => {
   const [opacity] = useState(new Animated.Value(0)); // Initial opacity set to 0
   const [drawingName, setDrawingName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [isDragging, setIsDragging] = useState(false); // Track dragging state
   const [loading, setLoading] = useState(false); // Loading state
-
-  const panResponder = useMemo(() => 
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => setIsDragging(true),
-      onPanResponderRelease: () => setIsDragging(false),
-      onPanResponderTerminate: () => setIsDragging(false),
-    }), 
-  []
-  );
 
   useEffect(() => {
     const loadFonts = async () => {
@@ -212,8 +200,28 @@ const App = ({ navigation, route }) => {
     setGrid(newGrid);
   };
 
+  const rows = 3;
+  const cols = 2;
+
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderMove: (evt, gestureState) => {
+      const { moveX, moveY } = gestureState;
+      const rowIndex = Math.floor((moveY-50) / 116) -2; // Assuming 50px per pixel
+      const colIndex = Math.floor((moveX) / 116) - 5; // Assuming 50px per pixel
+      console.log(rowIndex, colIndex)
+      if (rowIndex >= 0 && rowIndex < rows && colIndex >= 0 && colIndex < cols) {
+        const newGrid = [...grid];
+        console.log(newGrid)
+        newGrid[rowIndex][colIndex] = tool === 'pencil' ? 1: 0; // Turn the pixel black
+        setGrid(newGrid);
+      }
+    },
+  });
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} >
         {messageVisible && (
           <Animated.View style={[styles.messageBubble, { opacity }]}>
             <Text style={styles.messageText}>{message}</Text>
@@ -227,7 +235,7 @@ const App = ({ navigation, route }) => {
       {/* Pixel Grid */}
       <View style={styles.wrapper}>
 
-        <View style={styles.board}>
+        <View style={styles.board} {...panResponder.panHandlers}>
           {grid.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.row}>
               {row.map((cell, colIndex) => (
