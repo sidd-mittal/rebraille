@@ -1,14 +1,48 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList } from 'react-native';
+import React, {useState, useEffect} from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, Button } from 'react-native';
+import {FLASK_URL} from '../../config'
+import { useFocusEffect } from '@react-navigation/native';
 
-const TemplatesScreen = ({ navigation }) => {
-  const pixelArrays = [
-    { id: 1, data: [1, 1, 1, 1, 1, 1], label: "Rectangle" },
-    { id: 2, data: [1, 1, 1, 1, 0, 0], label: "Square" },
-    { id: 3, data: [1, 1, 1, 0, 0, 0], label: "Triangle" },
-    { id: 4, data: [0, 1, 1, 1, 1, 0], label: "Parallelogram" },
-  ]
-  
+const TemplatesScreen = ({ navigation, route }) => {
+  const [pixelArrays, setPixelArrays] = useState([]);
+    // Function to fetch pixelArrays from your API
+
+  const fetchPixelArrays = async () => {
+    try {
+      const response = await await fetch(`${FLASK_URL}/drawings`); // Replace with your API endpoint
+      const data = await response.json();
+      // console.log(data)
+      setPixelArrays(data);  // Set the response data to the pixelArrays state
+    } catch (error) {
+      alert('Error fetching data from API');
+    }
+  };
+  useEffect(() => {
+    fetchPixelArrays();  // Fetch pixelArrays when the component mounts
+  }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // console.log(route); // Check the full route params
+      const newPixels = route.params?.newPixels || [];
+      const newLabel = route.params?.label || [];
+      console.log(pixelArrays[pixelArrays.length - 1])
+
+
+      if (newPixels.length > 0) {
+        const newDrawing = [{
+          data: newPixels,
+          label: newLabel,
+          id: pixelArrays[pixelArrays.length - 1]['id'] + 1        }]
+          setPixelArrays(prev => {
+            const updatedArrays = [...prev, ...newDrawing]; 
+            console.log(updatedArrays); // Log after state has been updated
+            return updatedArrays;
+          });
+          navigation.setParams({ newPixels: [], label: [] });
+      }
+    }, [route.params]) // Runs when route.params changes
+  );
 
   const convertToGrid = (array) => [
     [array[0], array[1]],
@@ -44,6 +78,8 @@ const TemplatesScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+    
+  
       <Text style={styles.title}>Choose a shape</Text>
       <FlatList
         data={pixelArrays}

@@ -94,7 +94,7 @@ void handlePostRequest() {
     
     server.send(200, "text/plain", "ESP32 received: " + receivedData);
 
-    delay(2000);
+    delay(200);
     electromagnetOff();
     
   } else {

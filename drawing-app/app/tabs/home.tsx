@@ -8,10 +8,13 @@ import {
   Alert,
   Platform,
   Animated,
-  Button
+  Button,
+  Modal,
+  TextInput
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as Font from 'expo-font';
+import {FLASK_URL} from '../config'
 
 const App = ({ navigation, route }) => {
   const [grid, setGrid] = useState([
@@ -23,6 +26,9 @@ const App = ({ navigation, route }) => {
   const [message, setMessage] = useState("");
   const [messageVisible, setMessageVisible] = useState(false); 
   const [opacity] = useState(new Animated.Value(0)); // Initial opacity set to 0
+  const [drawingName, setDrawingName] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+
 
   useEffect(() => {
     const loadFonts = async () => {
@@ -88,36 +94,71 @@ const App = ({ navigation, route }) => {
 
   const fetchMessage = async () => {
     try {
-      const response = await fetch('http://192.168.4.2:9000/test');  // Replace <mac-ip> with your Mac's IP address
+      const response = await fetch(`${FLASK_URL}/test`);  // Replace <mac-ip> with your Mac's IP address
       const data = await response.json();
       alert(data.message);  // Show the message from Flask
     } catch (error) {
       alert('Error connecting to Flask server');
     }
   };
-  const saveDrawing = () => {
-    setMessage('Successfully Saved Drawing');
-    setMessageVisible(true);
+
+  const handleSaveClick= () => {
+    setModalVisible(true); 
+  }
+  const saveDrawing = async () => {
+    try {
+      setModalVisible(false)
+      const response = await fetch(`${FLASK_URL}/drawings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: 1,  // Change this dynamically if needed
+          drawing_name: drawingName,
+          drawing_array: JSON.stringify(grid.flat()),
+        }),
+      });
   
-    // Fade in the message
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 500, // Duration for fade-in
-      useNativeDriver: true,
-    }).start();
+      const data = await response.json();
   
-    setTimeout(() => {
-      // Fade out the message after 3 seconds
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 500, // Duration for fade-out
-        useNativeDriver: true,
-      }).start();
-  
-      setTimeout(() => {
-        setMessageVisible(false);
-      }, 500); // Wait for fade-out to finish before hiding the message
-    }, 3000); // Hide after 3 seconds
+      if (response.ok) {
+        
+        setMessage('Successfully Saved Drawing');
+        setMessageVisible(true);
+        navigation.navigate("Templates", {
+          screen: "Saved Drawings", // This is the top tab navigator component inside Templates
+          params: { newPixels: grid.flat(), label: drawingName }
+        });
+      
+        // Fade in the message
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 500, // Duration for fade-in
+          useNativeDriver: true,
+        }).start();
+      
+        setTimeout(() => {
+          // Fade out the message after 3 seconds
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 500, // Duration for fade-out
+            useNativeDriver: true,
+          }).start();
+      
+          setTimeout(() => {
+            setMessageVisible(false);
+          }, 500); // Wait for fade-out to finish before hiding the message
+
+        }, 3000); // Hide after 3 seconds
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('Error saving drawing:', error);
+    }
+
+
   };
 
   const handlePress = (row, col) => {
@@ -178,7 +219,7 @@ const App = ({ navigation, route }) => {
             <Icon name="close-circle" size={30} color="#fff" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.saveButton} onPress={saveDrawing}>
+          <TouchableOpacity style={styles.saveButton}  onPress={handleSaveClick}>
             <Icon name="content-save" size={30} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -190,6 +231,31 @@ const App = ({ navigation, route }) => {
         </TouchableOpacity>
 
 
+        <Modal visible={modalVisible} transparent animationType="fade">
+        <View style={styles.modalBackground}>
+          <View style={styles.popupBox}>
+            <Text style={styles.popupTitle}>Enter Drawing Name</Text>
+            <TextInput
+              value={drawingName}
+              onChangeText={setDrawingName}
+              placeholder=""
+              style={styles.input}
+            />
+            <View style={styles.buttonRow}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.savePopupButton, !drawingName.trim() && styles.disabledButton]}
+                onPress={saveDrawing}
+                disabled={!drawingName.trim()} // Disables button if empty
+              >
+                <Text style={styles.savePopupButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       </View>
     </SafeAreaView>
   );
@@ -298,6 +364,43 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
   },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  popupBox: {
+    width: 250,
+    backgroundColor: 'white',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  popupTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
+  input: {
+    width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+    padding: 5,
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
+  cancelButton: { paddingVertical: 8, paddingHorizontal: 15 },
+  cancelButtonText: { color: 'red' },
+  savePopupButton: {
+    backgroundColor: '#375f92',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  savePopupButtonText: { color: 'white', fontWeight: 'bold' },
+  disabledButton: { backgroundColor: '#ccc' }, // Grayed out when input is empty
 });
 
 export default App;
