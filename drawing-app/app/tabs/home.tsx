@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,13 @@ import {
   Animated,
   Button,
   Modal,
-  TextInput
+  TextInput,
+  ActivityIndicator
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as Font from 'expo-font';
 import {FLASK_URL} from '../config'
+import { PanResponder } from 'react-native';
 
 const App = ({ navigation, route }) => {
   const [grid, setGrid] = useState([
@@ -29,6 +31,18 @@ const App = ({ navigation, route }) => {
   const [drawingName, setDrawingName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [isDragging, setIsDragging] = useState(false); // Track dragging state
+  const [loading, setLoading] = useState(false); // Loading state
+
+  const panResponder = useMemo(() => 
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => setIsDragging(true),
+      onPanResponderRelease: () => setIsDragging(false),
+      onPanResponderTerminate: () => setIsDragging(false),
+    }), 
+  []
+  );
 
   useEffect(() => {
     const loadFonts = async () => {
@@ -48,20 +62,32 @@ const App = ({ navigation, route }) => {
   }, [route.params?.grid]);
 
   const sendDataToESP32 = async () => {
+    setLoading(true); // Start loading
     try {
+
+      const timeout = 3000; 
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Request timed out")), timeout)
+      );
+
       const esp32IP =  "http://192.168.4.1" //"http://192.168.2.153"; // Replace with your ESP32's IP
-      const response = await fetch(`${esp32IP}/data`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain",
-        },
-        body: JSON.stringify(grid.flat()), // Send the flattened grid data
-      });
+      const response = await Promise.race([
+        fetch(`${esp32IP}/data`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain",
+          },
+          body: JSON.stringify(grid.flat()),
+        }),
+        timeoutPromise, // Race fetch against timeout
+      ]);
 
       const responseText = await response.text();
       console.log("Response from ESP32:", responseText);
       setMessage("Response from ESP32" + responseText);
       setMessageVisible(true);
+      setLoading(false)
     
       Animated.timing(opacity, {
         toValue: 1,
@@ -81,8 +107,27 @@ const App = ({ navigation, route }) => {
         }, 500); 
       }, 3000); 
     } catch (error) {
+      setLoading(false); // Start loading
       console.error("Error sending data:", error);
-      setMessage("Error sending data" + error);
+      setMessage("Error Sending Data. Please check your connection");
+      setMessageVisible(true);
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 500, // Duration for fade-in
+        useNativeDriver: true,
+      }).start();
+    
+      setTimeout(() => {
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 500, // Duration for fade-out
+          useNativeDriver: true,
+        }).start();
+    
+        setTimeout(() => {
+          setMessageVisible(false);
+        }, 500); 
+      }, 3000); 
     }
   };
 
@@ -169,11 +214,11 @@ const App = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-                      {messageVisible && (
-  <Animated.View style={[styles.messageBubble, { opacity }]}>
-    <Text style={styles.messageText}>{message}</Text>
-  </Animated.View>
-)}
+        {messageVisible && (
+          <Animated.View style={[styles.messageBubble, { opacity }]}>
+            <Text style={styles.messageText}>{message}</Text>
+          </Animated.View>
+        )}
       <Text style={styles.title}>ReBraille</Text>
       <View >
               <Text>React Native + Flask Test</Text>
@@ -225,9 +270,15 @@ const App = ({ navigation, route }) => {
         </View>
 
         {/* Send Button */}
-        <TouchableOpacity style={styles.sendButton} onPress={sendDataToESP32}>
+        <TouchableOpacity style={styles.sendButton} onPress={sendDataToESP32} disabled={loading}>
+        {loading ? (
+        <ActivityIndicator size="small" color="#fff" />
+      ) : (
+        <>
           <Text style={styles.sendText}>Send to Device</Text>
           <Icon name="send" size={24} color="#fff" />
+        </>
+      )}
         </TouchableOpacity>
 
 
@@ -350,7 +401,8 @@ const styles = StyleSheet.create({
   },
   messageBubble: {
     position: 'absolute',
-    top: 5,
+    top: 20,
+    marginTop: 60,
     backgroundColor: 'grey',
     paddingHorizontal: 20,
     paddingVertical: 10,

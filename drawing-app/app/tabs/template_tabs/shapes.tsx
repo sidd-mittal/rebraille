@@ -73,11 +73,11 @@ const styles = StyleSheet.create({
   imageContainer: {
     margin: 10,
     alignItems: 'center',
-    width: 120,  // Increase width
+    width: 200,  // Increase width
 },
     pixel: {
-        width: 40,   // Increase pixel size
-        height: 40,  // Increase pixel size
+        width: 70,   // Increase pixel size
+        height: 70,  // Increase pixel size
         margin: 2,   // Adjust spacing
         borderWidth: 1,
         borderColor: 'gray',
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   },
   caption: {
     marginTop: 5,
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
   },
