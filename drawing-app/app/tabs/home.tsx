@@ -28,7 +28,7 @@ const App = ({ navigation, route }) => {
   const [opacity] = useState(new Animated.Value(0)); // Initial opacity set to 0
   const [drawingName, setDrawingName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-
+  const [isDragging, setIsDragging] = useState(false); // Track dragging state
 
   useEffect(() => {
     const loadFonts = async () => {
@@ -42,7 +42,7 @@ const App = ({ navigation, route }) => {
 
   useEffect(() => {
     if (route.params?.grid) {
-      const newGrid = route.params?.grid;
+      const newGrid = route.params.grid.map(row => [...row]); // Copy each row
       setGrid(newGrid);
     }
   }, [route.params?.grid]);
@@ -163,7 +163,7 @@ const App = ({ navigation, route }) => {
 
   const handlePress = (row, col) => {
     const newGrid = [...grid];
-    newGrid[row][col] = newGrid[row][col] === 0 ? 1 : 0;
+    newGrid[row][col] = tool === 'pencil' ? 1 : 0;
     setGrid(newGrid);
   };
 
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     paddingTop: 30,
   },
   title: {
-    fontSize: 30,
+    fontSize: 60,
     fontWeight: 'bold',
     marginBottom: 20,
     color: '#333',
@@ -280,33 +280,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'column',
-    width: '90%',
+    width: '100%',
     padding: 20,
   },
   board: {
     flexDirection: 'column',
-    marginBottom: 30,
+    marginBottom: 10,
     alignItems: 'center',
   },
   row: {
     flexDirection: 'row',
   },
   pixel: {
-    width: 70,
-    height: 70,
+    width: 110,
+    height: 110,
     margin: 3,
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
+    borderRadius: 30,
   },
   toolContainer: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 40,
     justifyContent: 'center',
     width: '100%',
   },
   toolButton: {
-    padding: 12,
+    padding: 20,
     backgroundColor: '#f0f0f0',
     margin: 5,
     borderRadius: 8,
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#375f92',
   },
   clearButton: {
-    padding: 12,
+    padding: 20,
     backgroundColor: '#FF5252',
     margin: 5,
     borderRadius: 8,
@@ -330,13 +330,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#375f92',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
+    paddingVertical: 20,
+    paddingHorizontal: 40,
     borderRadius: 8,
     marginTop: 5,
   },
   saveButton:{
-    padding: 12,
+    padding: 20,
     backgroundColor: '#6fae58',
     margin: 5,
     borderRadius: 8,
