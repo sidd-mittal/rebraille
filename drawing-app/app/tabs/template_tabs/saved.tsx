@@ -8,21 +8,29 @@ import { Ionicons } from 'react-native-vector-icons';
 const TemplatesScreen = ({ navigation, route }) => {
   const [pixelArrays, setPixelArrays] = useState([]);
   const [connectionMessage, setConnectionMessage] = useState("")
+  const [emptyMessage, setEmptyMessage] = useState(false)
     // Function to fetch pixelArrays from your API
 
   const fetchPixelArrays = async () => {
     try {
       const response = await await fetch(`${FLASK_URL}/drawings`); // Replace with your API endpoint
       const data = await response.json();
-      // console.log(data)
-      setPixelArrays(data);  // Set the response data to the pixelArrays state
+      setConnectionMessage("")
+      setEmptyMessage(false)
+      console.log(data, 'HII')
+      if (data.length >0){
+        setPixelArrays(data);  // Set the response data to the pixelArrays state
+      }
+      else{
+        console.log('LOLO')
+        setEmptyMessage(true)
+      }
     } catch (error) {
       
       setConnectionMessage("Please check your connection")
     }
   };
   useEffect(() => {
-    console.log('saved')
     fetchPixelArrays();  // Fetch pixelArrays when the component mounts
 
   }, []);
@@ -32,14 +40,14 @@ const TemplatesScreen = ({ navigation, route }) => {
       // console.log(route); // Check the full route params
       const newPixels = route.params?.newPixels || [];
       const newLabel = route.params?.label || [];
-      console.log(pixelArrays[pixelArrays.length - 1])
 
 
       if (newPixels.length > 0) {
+        setEmptyMessage(false)
         const newDrawing = [{
           data: newPixels,
           label: newLabel,
-          id: pixelArrays[pixelArrays.length - 1]['id'] + 1        }]
+          id: pixelArrays.length >0 ? pixelArrays[pixelArrays.length - 1]['id'] + 1  : 0      }]
           setPixelArrays(prev => {
             const updatedArrays = [...prev, ...newDrawing]; 
             console.log(updatedArrays); // Log after state has been updated
@@ -86,7 +94,7 @@ const TemplatesScreen = ({ navigation, route }) => {
     <SafeAreaView style={styles.container}>
     
   
-      <Text style={styles.title}>Choose a shape</Text>
+      {/* <Text style={styles.title}>Choose a shape</Text> */}
       <FlatList
         data={pixelArrays}
         renderItem={renderItem}
@@ -95,11 +103,17 @@ const TemplatesScreen = ({ navigation, route }) => {
         contentContainerStyle={styles.grid}
       />
        {connectionMessage ? (
-  <View style={styles.connectionMessageContainer}>
-    <Ionicons name="warning-outline" size={100}  />
-    <Text style={styles.connectionMessageText}>{connectionMessage}</Text>
-  </View>
-) : null}
+        <View style={styles.connectionMessageContainer}>
+          <Ionicons name="warning-outline" size={100}  />
+          <Text style={styles.connectionMessageText}>{connectionMessage}</Text>
+        </View>
+      ) : null}
+
+      {emptyMessage ? (
+        <View style={styles.connectionMessageContainer}>
+          <Text style={styles.connectionMessageText}>A saved drawing will appear here!</Text>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 };
@@ -109,6 +123,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 50,
     alignItems: 'center',
+    marginTop: 50
   },
   title: {
     fontSize: 20,
@@ -147,7 +162,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Slightly transparent background
+    // backgroundColor: 'rgba(255, 255, 255, 0.8)', // Slightly transparent background
   },
   connectionMessageText: {
     fontSize: 18,

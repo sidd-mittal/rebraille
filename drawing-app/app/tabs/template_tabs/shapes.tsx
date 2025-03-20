@@ -44,7 +44,7 @@ const TemplatesScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Choose a shape</Text>
+      {/* <Text style={styles.title}>Choose a shape</Text> */}
       <FlatList
         data={pixelArrays}
         renderItem={renderItem}
@@ -59,8 +59,8 @@ const TemplatesScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
     alignItems: 'center',
+    marginTop: 50
   },
   title: {
     fontSize: 20,

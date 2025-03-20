@@ -30,10 +30,10 @@ def get_drawings():
         id = 1
         cursor.execute(f"SELECT drawing_id, drawing_name, drawing_array FROM saved_drawings WHERE user_id = {id}")
         drawings = cursor.fetchall()  # Fetch all results
-
-        print(drawings[0])
-        # Return the results as a JSON response
-        return jsonify([{'id': drawing[0],'label': drawing[1], 'data': drawing[2]} for drawing in drawings])
+        if drawings:
+            return jsonify([{'id': drawing[0],'label': drawing[1], 'data': drawing[2]} for drawing in drawings])
+        else:
+            return []
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
