@@ -1,7 +1,8 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Home  from './home'; // Adjust paths
-import Profile from './profile';
+// import Profile from './profile';
 import Templates from './templates'
+// import Settings from './settings';
 import { Ionicons } from 'react-native-vector-icons';
 
 const Tab = createBottomTabNavigator();
@@ -15,9 +16,9 @@ export default function Tabs() {
       <Tab.Screen name="Templates" component={Templates}   options={{ headerShown: false, tabBarIcon: ({ color, size }) => (
               <Ionicons name="document" size={size} color={color} />
             ),}} />
-      <Tab.Screen name="Profile" component={Profile}   options={{ headerShown: false, tabBarIcon: ({ color, size }) => (
-              <Ionicons name="person" size={size} color={color} />
-            ),}} />
+      {/* <Tab.Screen name="Settings" component={Settings}   options={{ headerShown: false, tabBarIcon: ({ color, size }) => (
+              <Ionicons name="settings" size={size} color={color} />
+            ),}} /> */}
 
     </Tab.Navigator>
   );

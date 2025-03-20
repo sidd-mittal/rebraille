@@ -32,3 +32,20 @@ Flask is running at ```exp://192.168.4.2:9000```
 
 
 Start app on data then switch to ESP wifi
+
+
+
+STEPS TO SET UP:
+
+1. Run Upload .ino code to ESP32
+2. Run Flask by running 'python3 app.py' in flask folder
+3. Connect iPad and laptop to ESP32_AP network
+4. Run ```ipconfig getifaddr en0 ``` on laptop
+5. Change config.js to match the ip
+6. Run ```npx expo start --lan```
+7. Switch to expo go by pressing 's'
+8. Copy exp:// link into safari and load (if not available on app)
+9. Troubleshooting: Check the ip of the ESP32 to see if it has changed (Should be 192.168.4.1)
+
+
+

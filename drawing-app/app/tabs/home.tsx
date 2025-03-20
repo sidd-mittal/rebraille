@@ -53,7 +53,7 @@ const App = ({ navigation, route }) => {
     setLoading(true); // Start loading
     try {
 
-      const timeout = 3000; 
+      const timeout = 15000; 
 
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("Request timed out")), timeout)
@@ -184,6 +184,8 @@ const App = ({ navigation, route }) => {
           }, 500); // Wait for fade-out to finish before hiding the message
 
         }, 3000); // Hide after 3 seconds
+
+        setDrawingName("")
       } else {
         alert(`Error: ${data.error}`);
       }
@@ -228,10 +230,10 @@ const App = ({ navigation, route }) => {
           </Animated.View>
         )}
       <Text style={styles.title}>ReBraille</Text>
-      <View >
+      {/* <View >
               <Text>React Native + Flask Test</Text>
               <Button title="Fetch Message from Flask" onPress={fetchMessage} />
-            </View>
+            </View> */}
       {/* Pixel Grid */}
       <View style={styles.wrapper}>
 
@@ -431,7 +433,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   popupBox: {
-    width: 250,
+    width: 300,
     backgroundColor: 'white',
     padding: 15,
     borderRadius: 10,
@@ -441,22 +443,24 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  popupTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
+  popupTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
   input: {
     width: '100%',
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
     padding: 5,
     marginBottom: 15,
+    marginTop: 20,
     textAlign: 'center',
+    fontSize: 20,
   },
   buttonRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
   cancelButton: { paddingVertical: 8, paddingHorizontal: 15 },
   cancelButtonText: { color: 'red' },
   savePopupButton: {
     backgroundColor: '#375f92',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
     borderRadius: 5,
   },
   savePopupButtonText: { color: 'white', fontWeight: 'bold' },

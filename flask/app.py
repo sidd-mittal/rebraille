@@ -62,6 +62,28 @@ def add_drawing():
         conn.rollback()  # Rollback in case of an error
         return jsonify({'error': str(e)}), 500
 
+@app.route('/drawing_id', methods=['GET'])
+def drawing_id():
+    try:
+        cursor.execute("SELECT nextval('public.saved_drawings_drawing_id_seq');")
+        id = cursor.fetchall()  # Fetch all results
+        print(id[0][0])
+        return jsonify({'id': id[0][0]}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/drawings', methods=['DELETE'])
+def delete_drawing():
+    try:
+        data = request.get_json()
+        drawing_id = data.get('drawing_id') 
+        cursor.execute("DELETE FROM saved_drawings WHERE drawing_id = %s", (drawing_id,))
+
+        conn.commit()  # Ensure the change is saved to the database
+        return jsonify({'message': 'Drawing deleted successfully'}), 200
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 @app.route('/')
 def lol():
     return 'lool'

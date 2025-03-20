@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, Button } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, Button , Alert} from 'react-native';
 import {FLASK_URL} from '../../config'
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from 'react-native-vector-icons';
@@ -9,7 +9,7 @@ const TemplatesScreen = ({ navigation, route }) => {
   const [pixelArrays, setPixelArrays] = useState([]);
   const [connectionMessage, setConnectionMessage] = useState("")
   const [emptyMessage, setEmptyMessage] = useState(false)
-    // Function to fetch pixelArrays from your API
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const fetchPixelArrays = async () => {
     try {
@@ -37,27 +37,46 @@ const TemplatesScreen = ({ navigation, route }) => {
 
   useFocusEffect(
     React.useCallback(() => {
-      // console.log(route); // Check the full route params
+      const fetchData = async () => {
+        try {
+          const response = await fetch(`${FLASK_URL}/drawing_id`); // No double await
+          const data = await response.json(); // Parse JSON
+          return data.id; // Extract only the ID
+        } catch (error) {
+          return null; // Ensure function always returns something
+        }
+      };
+  
       const newPixels = route.params?.newPixels || [];
       const newLabel = route.params?.label || [];
-
-
+  
       if (newPixels.length > 0) {
-        setEmptyMessage(false)
-        const newDrawing = [{
-          data: newPixels,
-          label: newLabel,
-          id: pixelArrays.length >0 ? pixelArrays[pixelArrays.length - 1]['id'] + 1  : 0      }]
-          setPixelArrays(prev => {
-            const updatedArrays = [...prev, ...newDrawing]; 
+        (async () => {
+          const id = await fetchData(); // Await the function call
+          console.log(id, "ID"); // Should correctly print the ID now
+  
+          setEmptyMessage(false);
+  
+          const newDrawing = [
+            {
+              data: newPixels,
+              label: newLabel,
+              id: id-1
+            },
+          ];
+  
+          setPixelArrays((prev) => {
+            const updatedArrays = [...prev, ...newDrawing];
             console.log(updatedArrays); // Log after state has been updated
             return updatedArrays;
           });
+  
           navigation.setParams({ newPixels: [], label: [] });
+        })();
       }
     }, [route.params]) // Runs when route.params changes
   );
-
+  
   const convertToGrid = (array) => [
     [array[0], array[1]],
     [array[2], array[3]],
@@ -68,10 +87,62 @@ const TemplatesScreen = ({ navigation, route }) => {
     navigation.navigate('Draw', { grid: convertToGrid(image) });
   };
 
+  const handleLongPress = (data) => {
+    console.log(data)
+    Alert.alert(
+      'Choose an Action', // Title
+      'Would you like to rename or delete this item?', // Message
+      [
+        {
+          text: 'Delete', // Button text for delete action
+          onPress: () => handleDelete(data), // Call handleDelete function
+          style: 'destructive', // Style for delete button (red color)
+        },
+        {
+          text: 'Cancel', // Button text for cancel action
+          onPress: () => console.log('Cancel Pressed'),
+          style: 'cancel', // Style for cancel button
+        },
+        {
+          text: 'Rename', // Button text for rename action
+          onPress: () => handleRename(data), // Call handleRename function
+          style: 'default', // Default button style
+        },
+
+      ],
+      { cancelable: true } // Allow the alert to be dismissed by tapping outside
+    );
+  };
+
+  const handleRename = () => {
+    console.log('Rename option selected');
+    // Add logic to handle renaming here
+  };
+
+  const handleDelete = async (data) => {
+    try{
+      const response = await fetch(`${FLASK_URL}/drawings`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          drawing_id: data.id,  // Change this dynamically if needed
+        }),
+      });
+
+      console.log("deleteing", data.id)
+      const updatedPixelArrays = pixelArrays.filter(item => item.id !== data.id);
+      setPixelArrays(updatedPixelArrays);
+    } catch (error) {
+      console.error('Delete error')
+    }
+  };
+
   const renderItem = ({ item }) => {
     const grid = convertToGrid(item.data);
     return (
-      <TouchableOpacity style={styles.imageContainer} onPress={() => handleImagePress(item.data)}>
+      <TouchableOpacity style={styles.imageContainer} onPress={() => handleImagePress(item.data)} onLongPress={() => handleLongPress(item)}>
         {grid.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.pixelRow}>
             {row.map((pixel, colIndex) => (
