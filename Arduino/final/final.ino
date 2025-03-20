@@ -1,12 +1,9 @@
 #include <WiFi.h>
 #include <WebServer.h>
-
-
 const char *ssid = "ESP32_AP";     // SSID of the ESP32 Access Point
 const char *password = "12345678"; // Password for the AP
 
 WebServer server(80);  // HTTP server on port 80
-
 
 struct Dot {
   int EMA;
@@ -23,9 +20,9 @@ Dot dots[DOT_ARRAY_SIZE] = {
   {18, 5}, // EM6
 };
 
-#define EM12_nSLEEP 15  // nSLEEP for EM1 and EM2
-#define EM34_nSLEEP 2  // nSLEEP for EM3 and EM4
-#define EM56_nSLEEP 4  // nSLEEP for EM5 and EM6
+#define EM12_EN 15  // nSLEEP for EM1 and EM2
+#define EM34_EN 2  // nSLEEP for EM3 and EM4
+#define EM56_EN 4  // nSLEEP for EM5 and EM6
 
 std::vector<int> parseReceivedData(String receivedData) {
     std::vector<int> parsedValues;
@@ -51,9 +48,9 @@ std::vector<int> parseReceivedData(String receivedData) {
 // Function to turn electromagnets OFF
 void electromagnetOff() {
   // Disable drivers
-  digitalWrite(EM12_nSLEEP, LOW);
-  digitalWrite(EM34_nSLEEP, LOW);
-  digitalWrite(EM56_nSLEEP, LOW);
+  digitalWrite(EM12_EN, LOW);
+  digitalWrite(EM34_EN, LOW);
+  digitalWrite(EM56_EN, LOW);
 
   // Set all electromagnets to LOW (OFF)
   for (int i = 0; i < DOT_ARRAY_SIZE; i++) {
@@ -75,9 +72,9 @@ void handlePostRequest() {
     server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
 
     std::vector<int> numbers = parseReceivedData(receivedData);
-    digitalWrite(EM12_nSLEEP, HIGH);
-    digitalWrite(EM34_nSLEEP, HIGH);
-    digitalWrite(EM56_nSLEEP, HIGH);
+    digitalWrite(EM12_EN, HIGH);
+    digitalWrite(EM34_EN, HIGH);
+    digitalWrite(EM56_EN, HIGH);
     
     for (int i = 0; i < DOT_ARRAY_SIZE; i++) {
        if (numbers[i] == 1){
@@ -91,12 +88,8 @@ void handlePostRequest() {
         Serial.println(i);
 
     }
-    
-    server.send(200, "text/plain", "ESP32 received: " + receivedData);
-
-    delay(200);
     electromagnetOff();
-    
+    server.send(200, "text/plain", "ESP32 received: " + receivedData);
   } else {
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(400, "text/plain", "No data received");
@@ -113,14 +106,14 @@ void setup() {
     pinMode(dots[i].EMB, OUTPUT);
   }
     // Configure nSLEEP pins as outputs
-  pinMode(EM12_nSLEEP, OUTPUT);
-  pinMode(EM34_nSLEEP, OUTPUT);
-  pinMode(EM56_nSLEEP, OUTPUT);
+  pinMode(EM12_EN, OUTPUT);
+  pinMode(EM34_EN, OUTPUT);
+  pinMode(EM56_EN, OUTPUT);
 
   // Keep electromagnets disabled initially
-  digitalWrite(EM12_nSLEEP, LOW);
-  digitalWrite(EM34_nSLEEP, LOW);
-  digitalWrite(EM56_nSLEEP, LOW);
+  digitalWrite(EM12_EN, LOW);
+  digitalWrite(EM34_EN, LOW);
+  digitalWrite(EM56_EN, LOW);
   
 
 
