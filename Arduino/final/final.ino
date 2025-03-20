@@ -1,6 +1,8 @@
 #include <WiFi.h>
 #include <WebServer.h>
-const char *ssid = "ESP32_AP";     // SSID of the ESP32 Access Point
+#include <vector>
+
+const char *ssid = "rebraille";     // SSID of the ESP32 Access Point
 const char *password = "12345678"; // Password for the AP
 
 WebServer server(80);  // HTTP server on port 80
@@ -8,22 +10,25 @@ WebServer server(80);  // HTTP server on port 80
 struct Dot {
   int EMA;
   int EMB;
+  int EN;
 };
 
 const int DOT_ARRAY_SIZE = 6;
+
 Dot dots[DOT_ARRAY_SIZE] = {
-  {32, 33}, // EM1
-  {25, 26}, // EM2 
-  {27, 14}, // EM3
-  {12, 13}, // EM4
-  {23, 22}, // EM5
-  {18, 5}, // EM6
+  {22, 21, 23}, // EM1
+  {18, 19, 23}, // EM2 
+  {32, 33, 25}, // EM3
+  {26, 27, 25}, // EM4
+  {4, 17, 16},  // EM5
+  {12, 14, 16}, // EM6
 };
 
-#define EM12_EN 15  // nSLEEP for EM1 and EM2
-#define EM34_EN 2  // nSLEEP for EM3 and EM4
-#define EM56_EN 4  // nSLEEP for EM5 and EM6
+#define EM12_EN 23  // nSLEEP for EM1 and EM2
+#define EM34_EN 25  // nSLEEP for EM3 and EM4
+#define EM56_EN 16  // nSLEEP for EM5 and EM6
 
+// Parses a string like "[1,0,1,0,0,1]" into a vector of integers.
 std::vector<int> parseReceivedData(String receivedData) {
     std::vector<int> parsedValues;
     
@@ -37,99 +42,86 @@ std::vector<int> parseReceivedData(String receivedData) {
             parsedValues.push_back(receivedData.substring(startIndex).toInt());
             break;
         }
-        // Extract and convert each number
         parsedValues.push_back(receivedData.substring(startIndex, commaIndex).toInt());
         startIndex = commaIndex + 1;
     }
-
     return parsedValues;
 }
 
-// Function to turn electromagnets OFF
-void electromagnetOff() {
-  // Disable drivers
-  digitalWrite(EM12_EN, LOW);
-  digitalWrite(EM34_EN, LOW);
-  digitalWrite(EM56_EN, LOW);
-
-  // Set all electromagnets to LOW (OFF)
-  for (int i = 0; i < DOT_ARRAY_SIZE; i++) {
-    digitalWrite(dots[i].EMA, LOW);
-    digitalWrite(dots[i].EMB, LOW);
-  }
-
-  Serial.println("ELECTROMAGNETS OFF");
+void processDots(const std::vector<int>& numbers) {
+    for (int i = 0; i < DOT_ARRAY_SIZE; i++) {  
+       if (numbers[i] == 1) {
+          Serial.println("Raising Dot: " + String(i));
+          digitalWrite(dots[i].EN, HIGH);
+          digitalWrite(dots[i].EMA, HIGH);
+          digitalWrite(dots[i].EMB, LOW);
+          delay(600);
+          digitalWrite(dots[i].EN, LOW);
+          digitalWrite(dots[i].EMA, LOW);
+          digitalWrite(dots[i].EMB, LOW);
+       } else {
+          Serial.println("Lowering Dot: " + String(i));
+          digitalWrite(dots[i].EN, HIGH);
+          digitalWrite(dots[i].EMA, LOW);
+          digitalWrite(dots[i].EMB, HIGH);
+          delay(600);
+          digitalWrite(dots[i].EN, LOW);
+          digitalWrite(dots[i].EMA, LOW);
+          digitalWrite(dots[i].EMB, LOW);
+       }
+       delay(200);
+    }
 }
 
+// (Optional) HTTP POST handler in case you want to receive input over WiFi.
 void handlePostRequest() {
   if (server.hasArg("plain")) {
     String receivedData = server.arg("plain");
     Serial.println("Received from App: " + receivedData);
 
-    // Send CORS headers
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.sendHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
     server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
 
     std::vector<int> numbers = parseReceivedData(receivedData);
-    digitalWrite(EM12_EN, HIGH);
-    digitalWrite(EM34_EN, HIGH);
-    digitalWrite(EM56_EN, HIGH);
-    
-    for (int i = 0; i < DOT_ARRAY_SIZE; i++) {
-       if (numbers[i] == 1){
-          digitalWrite(dots[i].EMA, HIGH);
-          digitalWrite(dots[i].EMB, LOW);
-       }
-       else{
-          digitalWrite(dots[i].EMA, LOW);
-          digitalWrite(dots[i].EMB, HIGH);
-       }
-        Serial.println(i);
-
-    }
-    electromagnetOff();
+    processDots(numbers);
     server.send(200, "text/plain", "ESP32 received: " + receivedData);
   } else {
     server.sendHeader("Access-Control-Allow-Origin", "*");
     server.send(400, "text/plain", "No data received");
   }
 }
+
 void setup() {
   Serial.begin(115200);
 
-
-
-  
+  // Configure dot control pins as outputs.
   for (int i = 0; i < DOT_ARRAY_SIZE; i++) {
     pinMode(dots[i].EMA, OUTPUT);
     pinMode(dots[i].EMB, OUTPUT);
   }
-    // Configure nSLEEP pins as outputs
+  
+  // Configure enable pins as outputs.
   pinMode(EM12_EN, OUTPUT);
   pinMode(EM34_EN, OUTPUT);
   pinMode(EM56_EN, OUTPUT);
 
-  // Keep electromagnets disabled initially
+  // Initially disable electromagnets.
   digitalWrite(EM12_EN, LOW);
+  delay(100);
   digitalWrite(EM34_EN, LOW);
+  delay(100);
   digitalWrite(EM56_EN, LOW);
   
-
-
-  // Set ESP32 as Access Point
   WiFi.softAP(ssid, password);
   Serial.println("IP:");
   Serial.println(WiFi.softAPIP());
-
-  server.on("/data", HTTP_POST, handlePostRequest);  // Handle POST requests at /data
-  server.begin();  // Start the server
-
-
-
-
+  server.on("/data", HTTP_POST, handlePostRequest);
+  server.begin();
+  
+  Serial.println("Enter dot configuration array in the format [1,0,1,0,0,1] via Serial:");
 }
 
-void loop() {;
-  server.handleClient();  // Listen for incoming clients
+void loop() {
+  server.handleClient();
 }
