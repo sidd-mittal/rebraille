@@ -19,7 +19,7 @@ Dot dots[DOT_ARRAY_SIZE] = {
   {22, 21, 23}, // EM1
   {18, 19, 23}, // EM2 
   {32, 33, 25}, // EM3
-  {26, 27, 25}, // EM4
+  {27, 26, 25}, // EM4
   {4, 17, 16},  // EM5
   {12, 14, 16}, // EM6
 };
@@ -55,7 +55,7 @@ void processDots(const std::vector<int>& numbers) {
           digitalWrite(dots[i].EN, HIGH);
           digitalWrite(dots[i].EMA, HIGH);
           digitalWrite(dots[i].EMB, LOW);
-          delay(600);
+          delay(100);
           digitalWrite(dots[i].EN, LOW);
           digitalWrite(dots[i].EMA, LOW);
           digitalWrite(dots[i].EMB, LOW);
@@ -64,7 +64,7 @@ void processDots(const std::vector<int>& numbers) {
           digitalWrite(dots[i].EN, HIGH);
           digitalWrite(dots[i].EMA, LOW);
           digitalWrite(dots[i].EMB, HIGH);
-          delay(600);
+          delay(100);
           digitalWrite(dots[i].EN, LOW);
           digitalWrite(dots[i].EMA, LOW);
           digitalWrite(dots[i].EMB, LOW);
