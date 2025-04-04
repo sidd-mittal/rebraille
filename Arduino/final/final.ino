@@ -25,7 +25,7 @@ Dot dots[DOT_ARRAY_SIZE] = {
 };
 
 #define EM12_EN 23  // nSLEEP for EM1 and EM2
-#define EM34_EN 25  // nSLEEP for EM3 and EM4
+#define EM34_EN 25  // nSLEEœP for EM3 and EM4
 #define EM56_EN 16  // nSLEEP for EM5 and EM6
 
 // Parses a string like "[1,0,1,0,0,1]" into a vector of integers.

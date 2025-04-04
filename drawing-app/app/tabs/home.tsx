@@ -50,7 +50,7 @@ const App = ({ navigation, route }) => {
   }, [route.params?.grid]);
 
   const sendDataToESP32 = async () => {
-    setLoading(true); // Start loading
+    setLoading(true); 
     try {
 
       const timeout = 15000; 
@@ -59,7 +59,7 @@ const App = ({ navigation, route }) => {
         setTimeout(() => reject(new Error("Request timed out")), timeout)
       );
 
-      const esp32IP =  "http://192.168.4.1" //"http://192.168.2.153"; // Replace with your ESP32's IP
+      const esp32IP =  "http://192.168.4.1" //"http://192.168.2.153"; // Replace with ESP32 IP
       const response = await Promise.race([
         fetch(`${esp32IP}/data`, {
           method: "POST",
@@ -68,7 +68,7 @@ const App = ({ navigation, route }) => {
           },
           body: JSON.stringify(grid.flat()),
         }),
-        timeoutPromise, // Race fetch against timeout
+        timeoutPromise, 
       ]);
 
       const responseText = await response.text();
@@ -198,7 +198,7 @@ const App = ({ navigation, route }) => {
 
   const handlePress = (row, col) => {
     const newGrid = [...grid];
-    newGrid[row][col] = tool === 'pencil' ? 1 : 0;
+    newGrid[row][col] = grid[row][col] == 1 ? 0 : 1;
     setGrid(newGrid);
   };
 

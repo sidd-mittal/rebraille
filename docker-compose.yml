@@ -4,6 +4,7 @@ services:
       context: ./flask
     ports:
       - "9000:9000"
+    network_mode: "host"
     env_file:
       - .env  # Reference the .env file here
     environment:

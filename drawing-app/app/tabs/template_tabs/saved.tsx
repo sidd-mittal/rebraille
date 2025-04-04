@@ -103,11 +103,11 @@ const TemplatesScreen = ({ navigation, route }) => {
           onPress: () => console.log('Cancel Pressed'),
           style: 'cancel', // Style for cancel button
         },
-        {
-          text: 'Rename', // Button text for rename action
-          onPress: () => handleRename(data), // Call handleRename function
-          style: 'default', // Default button style
-        },
+        // {
+        //   text: 'Rename', // Button text for rename action
+        //   onPress: () => handleRename(data), // Call handleRename function
+        //   style: 'default', // Default button style
+        // },
 
       ],
       { cancelable: true } // Allow the alert to be dismissed by tapping outside
