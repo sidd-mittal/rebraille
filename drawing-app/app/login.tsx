@@ -5,9 +5,9 @@ import { useFonts, Poppins_300Light, Poppins_400Regular } from '@expo-google-fon
 import * as SplashScreen from 'expo-splash-screen';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SvgXml } from 'react-native-svg';
-import Logo from '../assets/images/rebraille_logo.svg';
 import { useFocusEffect } from "@react-navigation/native";
 import { FLASK_URL } from './config';
+import { useUser } from './userContext';
 
 const styles = StyleSheet.create({
   container: {
@@ -82,6 +82,7 @@ const styles = StyleSheet.create({
 });
 
 export default function Login() {
+  const { setUserId } = useUser();
   const [fontsLoaded] = useFonts({
     Poppins_300Light,
     Poppins_400Regular,
@@ -117,6 +118,7 @@ export default function Login() {
       });
   
       const data = await response.json();
+      setUserId(data.id);
       return data.success; // true or false from backend
     } catch (error) {
       console.error('Error checking user:', error);

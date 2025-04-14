@@ -3,17 +3,28 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, Butto
 import {FLASK_URL} from '../../config'
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from 'react-native-vector-icons';
+import { useUser } from '../../userContext';
 
 
 const TemplatesScreen = ({ navigation, route }) => {
+
   const [pixelArrays, setPixelArrays] = useState([]);
   const [connectionMessage, setConnectionMessage] = useState("")
   const [emptyMessage, setEmptyMessage] = useState(false)
   const [isMenuVisible, setIsMenuVisible] = useState(false);
-
+  const { userId } = useUser();
   const fetchPixelArrays = async () => {
     try {
-      const response = await await fetch(`${FLASK_URL}/drawings`); // Replace with your API endpoint
+      const response = await fetch(`${FLASK_URL}/get_drawings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId
+        }),
+      });
+  
       const data = await response.json();
       setConnectionMessage("")
       setEmptyMessage(false)
@@ -22,11 +33,10 @@ const TemplatesScreen = ({ navigation, route }) => {
         setPixelArrays(data);  // Set the response data to the pixelArrays state
       }
       else{
-        console.log('LOLO')
         setEmptyMessage(true)
       }
     } catch (error) {
-      
+      console.log(error)
       setConnectionMessage("Please check your connection")
     }
   };
@@ -161,10 +171,10 @@ const TemplatesScreen = ({ navigation, route }) => {
     );
   };
 
+
   return (
     <SafeAreaView style={styles.container}>
     
-  
       {/* <Text style={styles.title}>Choose a shape</Text> */}
       <FlatList
         data={pixelArrays}

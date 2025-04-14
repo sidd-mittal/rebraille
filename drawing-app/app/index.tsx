@@ -6,7 +6,7 @@ export default function Index() {
 
   useEffect(() => {
     const checkLogin = async () => {
-      const loggedIn = true // 
+      const loggedIn = false // 
       setIsLoggedIn(loggedIn);
     };
 

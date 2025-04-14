@@ -20,6 +20,7 @@ import * as Font from 'expo-font';
 import {FLASK_URL} from '../config'
 import { PanResponder } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useUser } from '../userContext';
 
 const App = ({ navigation, route }) => {
   const [grid, setGrid] = useState([
@@ -34,7 +35,8 @@ const App = ({ navigation, route }) => {
   const [drawingName, setDrawingName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false); // Loading state
-  const [logOutModal, setLogoutModal] = useState(false); // Loading state
+  const [logOutModal, setLogoutModal] = useState(false); 
+  const { userId } = useUser();
 
   const [instructionModal, setInstructionModal] = useState(false);
   const translateY = useRef(new Animated.Value(50)).current;
@@ -223,7 +225,7 @@ const App = ({ navigation, route }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          user_id: 1,  // Change this dynamically if needed
+          user_id: userId,  // Change this dynamically if needed
           drawing_name: drawingName,
           drawing_array: JSON.stringify(grid.flat()),
         }),

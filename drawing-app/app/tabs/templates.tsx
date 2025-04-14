@@ -6,6 +6,7 @@ import Shapes from './template_tabs/shapes'
 
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useUser } from '../UserContext';
 
 const Tab = createBottomTabNavigator();
 

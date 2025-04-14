@@ -26,10 +26,11 @@ conn = psycopg2.connect(
 )
 cursor = conn.cursor()
 
-@app.route('/drawings', methods=['GET'])
+@app.route('/get_drawings', methods=['POST'])
 def get_drawings():
     try:
-        id = 1
+        data = request.get_json()
+        id = data.get('user_id')
         cursor.execute(f"SELECT drawing_id, drawing_name, drawing_array FROM saved_drawings WHERE user_id = {id}")
         drawings = cursor.fetchall()  # Fetch all results
         if drawings:
@@ -135,7 +136,7 @@ def log_in():
     if username in user:
         print(user)
         password = check_password_hash(user[2], password)
-        return jsonify({'success': True}) if password else jsonify({'success': False})
+        return jsonify({'id': user[0], 'success': True}) if password else jsonify({'success': False})
     return jsonify({'success': False}), 201
 
 if __name__ == '__main__':
