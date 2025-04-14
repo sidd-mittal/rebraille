@@ -7,6 +7,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { SvgXml } from 'react-native-svg';
 import Logo from '../assets/images/rebraille_logo.svg';
 import { useFocusEffect } from "@react-navigation/native";
+import { FLASK_URL } from './config';
 
 const styles = StyleSheet.create({
   container: {
@@ -17,8 +18,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
   },
   label: {
-    fontSize: 18,
-    marginBottom: 5,
+    fontSize: 24,
+    marginBottom: 10,
     alignSelf: 'flex-start', // Left-align the label within the container
   },
   input: {
@@ -35,13 +36,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   logoTitle: {
-    fontSize: 25,
-    marginTop: 10,
-    fontFamily: 'Poppins_300Light', 
-    fontStyle: 'normal',
-    fontWeight: '300', 
-    lineHeight: 38,
-    color: '#31572C',
+    fontSize: 60,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+    fontFamily:'theSeasons',
   },
 
   logoContainer: {
@@ -69,10 +68,10 @@ const styles = StyleSheet.create({
     width:'50%'
   },
   button:{
-    backgroundColor: "#31572C",
-    paddingVertical: 5,
+    backgroundColor: "#375f92",
+    paddingVertical: 10,
     paddingHorizontal: 5,
-    borderRadius: 15,
+    borderRadius: 10,
     alignItems: "center",
     width: "100%",
   },
@@ -103,15 +102,30 @@ export default function Login() {
 
   const router = useRouter(); 
 
-  const checkLogin = () => {
-    if (text === '123' && password === '123') {
-      return true;
+
+  const checkLogin = async () => {
+    try {
+      const response = await fetch(`${FLASK_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: text,
+          password: password,
+        }),
+      });
+  
+      const data = await response.json();
+      return data.success; // true or false from backend
+    } catch (error) {
+      console.error('Error checking user:', error);
+      return false;
     }
-    return false; // Change to actual validation (e.g., checking user input)
   };
 
-  const handleLogin = () => {
-    const isAuthenticated = checkLogin(); // Replace with actual auth logic
+  const handleLogin = async() => {
+    const isAuthenticated = await checkLogin(); // Replace with actual auth logic
 
     if (isAuthenticated) {
       router.push("/tabs"); // Navigate if true
@@ -136,13 +150,13 @@ export default function Login() {
     <View style={styles.container} onLayout={onLayoutRootView}>
 
   <View key={key} style={styles.logoContainer}>
-      <Logo width={100} height={100} />
+      {/* <Logo width={100} height={100} /> */}
       <Text style={styles.logoTitle}>Rebraille</Text>
     </View>
       
    
     <View style = {styles.inputFields}>
-      <Text style={styles.label}>Log In12</Text>
+      <Text style={styles.label}>Log In</Text>
      
       <View style = {styles.loginInput}>
         <Text style={styles.inputTitle}>Username</Text>

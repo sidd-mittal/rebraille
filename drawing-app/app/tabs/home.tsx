@@ -1,22 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   SafeAreaView,
   Alert,
   Platform,
   Animated,
-  Button,
+  StyleSheet,
+  Easing,
   Modal,
   TextInput,
-  ActivityIndicator
+  ActivityIndicator,
+  Pressable,
 } from 'react-native';
+import { useRouter } from "expo-router"; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as Font from 'expo-font';
 import {FLASK_URL} from '../config'
 import { PanResponder } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const App = ({ navigation, route }) => {
   const [grid, setGrid] = useState([
@@ -31,6 +34,72 @@ const App = ({ navigation, route }) => {
   const [drawingName, setDrawingName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false); // Loading state
+  const [logOutModal, setLogoutModal] = useState(false); // Loading state
+
+  const [instructionModal, setInstructionModal] = useState(false);
+  const translateY = useRef(new Animated.Value(50)).current;
+  const scale = useRef(new Animated.Value(0.5)).current;
+  const shadowOpacity = useRef(new Animated.Value(0.4)).current;
+
+  let animationRef = null; // declare this outside your function (e.g., at the top of the component)
+  let isAnimating = true;  // control flag to stop the loop
+  
+  const router = useRouter(); 
+  const handleLogout = () => {
+    setLogoutModal(false);
+    router.push("/login"); // Navigate if true
+    // Add your logout logic here
+    console.log('User logged out');
+  };
+
+  const startAnimation = () => {
+    const animate = () => {
+      if (!isAnimating) return;
+  
+      scale.setValue(0.5);
+      shadowOpacity.setValue(0.4);
+      translateY.setValue(0);
+  
+      animationRef = Animated.sequence([
+        Animated.parallel([
+          Animated.timing(scale, {
+            toValue: 0.95,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.delay(200),
+        Animated.parallel([
+          Animated.timing(translateY, {
+            toValue: 60,
+            duration: 1200,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(scale, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.delay(200),
+      ]);
+  
+      animationRef.start(() => {
+        animate(); // recursively start the loop again
+      });
+    };
+  
+    isAnimating = true;
+    animate();
+  };
+
+  const stopAnimation = () => {
+    isAnimating = false;
+    if (animationRef) {
+      animationRef.stop();
+    }
+  };  
 
   useEffect(() => {
     const loadFonts = async () => {
@@ -49,10 +118,14 @@ const App = ({ navigation, route }) => {
     }
   }, [route.params?.grid]);
 
-  const sendDataToESP32 = async () => {
-    setLoading(true); 
-    try {
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+  const sendDataToESP32 = async () => {
+    setInstructionModal(true)
+    setLoading(true); 
+    startAnimation()
+    try {
+      await delay(3000); // wait for 1 second
       const timeout = 15000; 
 
       const timeoutPromise = new Promise((_, reject) => 
@@ -73,7 +146,7 @@ const App = ({ navigation, route }) => {
 
       const responseText = await response.text();
       console.log("Response from ESP32:", responseText);
-      setMessage("Response from ESP32" + responseText);
+      setMessage("Successfully Sent Data. Please Place Hand on Device");
       setMessageVisible(true);
       setLoading(false)
     
@@ -94,8 +167,11 @@ const App = ({ navigation, route }) => {
           setMessageVisible(false);
         }, 500); 
       }, 3000); 
+      setInstructionModal(false)
     } catch (error) {
       setLoading(false); // Start loading
+      setInstructionModal(false)
+      stopAnimation()
       console.error("Error sending data:", error);
       setMessage("Error Sending Data. Please check your connection");
       setMessageVisible(true);
@@ -230,11 +306,65 @@ const App = ({ navigation, route }) => {
           </Animated.View>
         )}
       <Text style={styles.title}>ReBraille</Text>
-      {/* <View >
-              <Text>React Native + Flask Test</Text>
-              <Button title="Fetch Message from Flask" onPress={fetchMessage} />
-            </View> */}
-      {/* Pixel Grid */}
+      <Modal
+        visible={instructionModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalBox}>
+            <View style={styles.box}>
+            <View style={styles.dotsContainer}>
+              <View style={styles.dotRow}>
+                <View style={styles.dot} />
+                <View style={styles.dot} />
+              </View>
+              <View style={styles.dotRow}>
+                <View style={styles.dot} />
+                <View style={styles.dot} />
+              </View>
+              <View style={styles.dotRow}>
+                <View style={styles.dot} />
+                <View style={styles.dot} />
+              </View>
+            </View>
+            <Animated.View
+              style={[
+                {
+                  position: 'absolute',
+                  zIndex: 2,
+                  transform: [{ translateY }, { scale }],
+                },
+              ]}
+            >
+              <Icon name="hand-back-left" size={80} color="#375f92" />
+            </Animated.View>
+            </View>
+            <Text style = {styles.instructionText}>Please remove hand from device</Text>
+          </View>
+        </View>
+      </Modal>
+      <View style={styles.profileIcon}>
+      <TouchableOpacity onPress={() => setLogoutModal(true)}>
+        <Ionicons name="person-circle-outline" size={50} color="#000" />
+      </TouchableOpacity>
+
+      <Modal
+        transparent
+        visible={logOutModal}
+        animationType="fade"
+        onRequestClose={() => setLogoutModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setLogoutModal(false)}>
+          <View style={styles.dropdown}>
+            <TouchableOpacity onPress={handleLogout}>
+              <Text style={styles.dropdownItem}>Log Out</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+    </View>
       <View style={styles.wrapper}>
 
         <View style={styles.board} {...panResponder.panHandlers}>
@@ -464,7 +594,117 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   savePopupButtonText: { color: 'white', fontWeight: 'bold' },
-  disabledButton: { backgroundColor: '#ccc' }, // Grayed out when input is empty
+  disabledButton: { backgroundColor: '#ccc' }, // Grayed out when input is empty,
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBox: {
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    width: 250,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  box: {
+    width: 120,
+    height: 120,
+    backgroundColor: '#ddd',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  shadow: {
+    position: 'absolute',
+    bottom: 30,
+    width: 60,
+    height: 10,
+    backgroundColor: '#000',
+    borderRadius: 5,
+    opacity: 0.4,
+  },
+  land: {
+    width: 120,
+    height: 80,
+    backgroundColor: '#8dc26f',
+    borderRadius: 15,
+    marginBottom: 10,
+  },
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: '#375f92',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+  },
+  dotsContainer: {
+    width: 60,
+    // height: 90,
+    flexDirection: 'column',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  
+  dot: {
+    width: 12,
+    height: 12,
+    backgroundColor: 'black',
+    borderRadius: 6,
+    marginVertical: 2,
+  },
+
+  dotRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    marginVertical: 2,
+  },
+  instructionText:{
+    textAlign: 'center',
+    fontFamily:'theSeasons',
+    fontSize: 20,
+    marginTop: 40
+  },
+  profileIcon: {
+    position: 'absolute',
+    top: 10,
+    right: 30,
+    paddingRight: 16,
+    paddingTop: 16, // Optional: Adds spacing from top
+    alignItems: 'flex-end',
+    
+  },
+  modalOverlay: {
+    flex: 1,
+    alignItems: 'flex-end',
+    paddingTop: 80,
+    paddingRight: 25,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  dropdown: {
+    backgroundColor: '#fff',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  dropdownItem: {
+    fontSize: 16,
+    paddingVertical: 8,
+  },
 });
 
 export default App;
