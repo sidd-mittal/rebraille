@@ -39,13 +39,8 @@ const App = ({ navigation, route }) => {
   const { userId } = useUser();
 
   const [instructionModal, setInstructionModal] = useState(false);
-  const translateY = useRef(new Animated.Value(50)).current;
-  const scale = useRef(new Animated.Value(0.5)).current;
-  const shadowOpacity = useRef(new Animated.Value(0.4)).current;
-
-  let animationRef = null; // declare this outside your function (e.g., at the top of the component)
-  let isAnimating = true;  // control flag to stop the loop
-  
+  const translateY = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(0.3)).current;
   const router = useRouter(); 
   const handleLogout = () => {
     setLogoutModal(false);
@@ -53,55 +48,38 @@ const App = ({ navigation, route }) => {
     // Add your logout logic here
     console.log('User logged out');
   };
+  console.log(scale)
 
-  const startAnimation = () => {
-    const animate = () => {
-      if (!isAnimating) return;
+  const animation = Animated.loop(
+    Animated.sequence([
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
+      Animated.delay(300),
+      Animated.timing(translateY, {
+        toValue: 50,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
+      Animated.delay(800),
+      Animated.parallel([
+        Animated.timing(scale, {
+          toValue: 0.2,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ]),
+    ])
+  ).start()
   
-      scale.setValue(0.5);
-      shadowOpacity.setValue(0.4);
-      translateY.setValue(0);
   
-      animationRef = Animated.sequence([
-        Animated.parallel([
-          Animated.timing(scale, {
-            toValue: 0.95,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.delay(200),
-        Animated.parallel([
-          Animated.timing(translateY, {
-            toValue: 60,
-            duration: 1200,
-            easing: Easing.in(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(scale, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.delay(200),
-      ]);
-  
-      animationRef.start(() => {
-        animate(); // recursively start the loop again
-      });
-    };
-  
-    isAnimating = true;
-    animate();
-  };
-
-  const stopAnimation = () => {
-    isAnimating = false;
-    if (animationRef) {
-      animationRef.stop();
-    }
-  };  
 
   useEffect(() => {
     const loadFonts = async () => {
@@ -123,15 +101,19 @@ const App = ({ navigation, route }) => {
   const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const sendDataToESP32 = async () => {
-    setInstructionModal(true)
-    setLoading(true); 
-    startAnimation()
     try {
-      await delay(3000); // wait for 1 second
+      setInstructionModal(true)
+      setLoading(true); 
+      await delay(1000); 
+
       const timeout = 15000; 
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Request timed out")), timeout)
+        setTimeout(() => {
+          setLoading(false);
+          setInstructionModal(false);
+          reject(new Error("Request timed out"));
+        }, timeout)
       );
 
       const esp32IP =  "http://192.168.4.1" //"http://192.168.2.153"; // Replace with ESP32 IP
@@ -140,6 +122,7 @@ const App = ({ navigation, route }) => {
           method: "POST",
           headers: {
             "Content-Type": "text/plain",
+            "Cache-Control": "no-cache"
           },
           body: JSON.stringify(grid.flat()),
         }),
@@ -167,13 +150,12 @@ const App = ({ navigation, route }) => {
     
         setTimeout(() => {
           setMessageVisible(false);
-        }, 500); 
+        }, 2000); 
       }, 3000); 
       setInstructionModal(false)
     } catch (error) {
       setLoading(false); // Start loading
       setInstructionModal(false)
-      stopAnimation()
       console.error("Error sending data:", error);
       setMessage("Error Sending Data. Please check your connection");
       setMessageVisible(true);
@@ -655,6 +637,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     zIndex: 1,
+    paddingLeft:10
   },
   
   dot: {

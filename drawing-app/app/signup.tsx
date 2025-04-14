@@ -205,10 +205,10 @@ export default function Login() {
       <Text style={styles.label}>Sign Up</Text>
      
       <View style = {styles.loginInput}>
-        <Text style={styles.inputTitle}>Email</Text>
+        <Text style={styles.inputTitle}>Email/Username</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter Email"
+          placeholder="Enter Email/Username"
           value={text}
           onChangeText={setText}
         />

@@ -100,6 +100,7 @@ def add_user():
     try:
         data = request.get_json()
         email = data.get('username') 
+        email = email.upper()
         password = data.get('password')
 
         password_hash = generate_password_hash(password, method="pbkdf2:sha256", salt_length=16)
@@ -130,6 +131,7 @@ def check_user():
 def log_in():
     data = request.get_json()
     username = data.get('username')
+    username = username.upper()
     password = data.get('password')
     cursor.execute("SELECT * FROM users WHERE email = %s" ,(username,))
     user = cursor.fetchone()

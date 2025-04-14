@@ -101,7 +101,7 @@ const TemplatesScreen = ({ navigation, route }) => {
     console.log(data)
     Alert.alert(
       'Choose an Action', // Title
-      'Would you like to rename or delete this item?', // Message
+      'Would you like to delete this drawing?', // Message
       [
         {
           text: 'Delete', // Button text for delete action
